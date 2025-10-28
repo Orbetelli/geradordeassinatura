@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Assinatura Médica</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: white;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .info-box {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 30px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .upload-section {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .upload-section:hover {
+            border-color: rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .file-input-label {
+            display: block;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            font-weight: bold;
+            transition: transform 0.2s ease;
+        }
+
+        .file-input-label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            transition: all 0.3s ease;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            transition: all 0.3s ease;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus {
+            outline: none;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .helper-text {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-top: 5px;
+            font-style: italic;
+        }
+
+        .btn {
+            padding: 15px 40px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .preview-section {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        #previewCanvas {
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            background: white;
+            display: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .buttons-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .message-error {
+            background: rgba(220, 53, 69, 0.2);
+            border: 2px solid rgba(220, 53, 69, 0.5);
+        }
+
+        .message-success {
+            background: rgba(40, 167, 69, 0.2);
+            border: 2px solid rgba(40, 167, 69, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🩺 Gerador de Assinatura Médica</h1>
+        <div class="info-box">
+            💡 <strong>Dica:</strong> Para que a assinatura fique boa, use uma imagem com fundo limpo!
+        </div>
+        
+        <div class="upload-section">
+            <div class="file-input-wrapper">
+                <label for="fileInput" class="file-input-label">
+                    📁 Selecionar Imagem da Assinatura
+                </label>
+                <input type="file" id="fileInput" accept="image/*">
+            </div>
+            <div id="fileName" style="text-align: center; margin-top: 10px;"></div>
+        </div>
+
+        <div class="form-group">
+            <label for="doctorName">Nome do Médico (com Dr./Dra.):</label>
+            <input type="text" id="doctorName" placeholder="Ex: Dr. João Silva">
+        </div>
+
+        <div class="form-group">
+            <label for="doctorCRM">CRM com Estado:</label>
+            <input type="text" id="doctorCRM" placeholder="Ex: CRM 12345/SP">
+        </div>
+
+        <div class="checkbox-group">
+            <input type="checkbox" id="addExtraPhrase">
+            <label for="addExtraPhrase" style="margin-bottom: 0;">Adicionar frases extras</label>
+        </div>
+
+        <div class="form-group hidden" id="extraPhraseGroup">
+            <label for="extraPhrase">Frase adicional 1:</label>
+            <textarea id="extraPhrase" placeholder="Digite a primeira frase extra (pressione Enter para quebrar linha)" rows="2"></textarea>
+            <div class="helper-text">💡 Pressione Enter para adicionar quebras de linha</div>
+        </div>
+
+        <div class="form-group hidden" id="extraPhrase2Group">
+            <label for="extraPhrase2">Frase adicional 2 (opcional):</label>
+            <textarea id="extraPhrase2" placeholder="Digite a segunda frase extra (opcional)" rows="2"></textarea>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p style="margin-top: 15px;">Processando imagem...</p>
+        </div>
+
+        <div id="messageContainer"></div>
+
+        <div class="buttons-container">
+            <button class="btn btn-primary" onclick="generateSignature()" id="generateBtn">
+                ✨ Gerar Assinatura
+            </button>
+            <button class="btn btn-success hidden" onclick="downloadImage()" id="downloadBtn">
+                💾 Baixar Assinatura
+            </button>
+        </div>
+
+        <div class="preview-section">
+            <canvas id="previewCanvas" width="480" height="120"></canvas>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
