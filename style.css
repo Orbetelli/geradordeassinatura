@@ -92,6 +92,7 @@ label {
 }
 
 input[type="text"],
+input[type="range"],
 textarea {
     width: 100%;
     padding: 15px;
@@ -101,19 +102,16 @@ textarea {
     background: rgba(255, 255, 255, 0.9);
     color: #333;
     transition: all 0.3s ease;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+input[type="range"] {
+    padding: 5px;
+    cursor: pointer;
 }
 
 textarea {
     resize: vertical;
     min-height: 60px;
-}
-
-input[type="text"]:focus,
-textarea:focus {
-    outline: none;
-    background: white;
-    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
 }
 
 .checkbox-group {
@@ -123,17 +121,20 @@ textarea:focus {
     margin-bottom: 15px;
 }
 
-input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
-}
-
 .helper-text {
     font-size: 0.9em;
     opacity: 0.9;
     margin-top: 5px;
     font-style: italic;
+}
+
+.threshold-value {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 5px 15px;
+    border-radius: 5px;
+    margin-left: 10px;
+    font-weight: bold;
 }
 
 .btn {
@@ -160,17 +161,6 @@ input[type="checkbox"] {
 .btn-success {
     background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
     color: white;
-}
-
-.btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-}
-
-.btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
 }
 
 .preview-section {
@@ -207,13 +197,8 @@ input[type="checkbox"] {
     100% { transform: rotate(360deg); }
 }
 
-.buttons-container {
-    text-align: center;
-    margin-top: 20px;
-}
-
 .hidden {
-    display: none;
+    display: none !important;
 }
 
 .message {
@@ -234,15 +219,11 @@ input[type="checkbox"] {
     border: 2px solid rgba(40, 167, 69, 0.5);
 }
 
-.message-info {
-    background: rgba(0, 123, 255, 0.2);
-    border: 2px solid rgba(0, 123, 255, 0.5);
-}
-
 .image-preview {
     max-width: 300px;
     max-height: 200px;
     margin: 20px auto;
     border-radius: 10px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    display: block;
 }

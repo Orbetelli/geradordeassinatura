@@ -10,7 +10,7 @@
     <div class="container">
         <h1>🩺 Gerador de Assinatura Médica</h1>
         <div class="info-box">
-            💡 <strong>Novidade:</strong> Agora com remoção automática de fundo! 🎉
+            💡 <strong>Versão Melhorada:</strong> Agora com remoção automática de fundo otimizada! 🎉
         </div>
         
         <div class="upload-section">
@@ -21,9 +21,21 @@
                 <input type="file" id="fileInput" accept="image/*">
             </div>
             <div id="fileName" style="text-align: center; margin-top: 10px;"></div>
-            <div id="imagePreviewContainer" style="display: none;">
+            <div id="imagePreviewContainer" style="display: none; text-align: center;">
                 <img id="imagePreview" class="image-preview" alt="Preview da imagem">
             </div>
+            
+            <div class="form-group hidden" id="thresholdGroup">
+                <label for="threshold">
+                    Sensibilidade da Remoção:
+                    <span class="threshold-value" id="thresholdValue">50</span>
+                </label>
+                <input type="range" id="threshold" min="20" max="100" value="50">
+                <div class="helper-text">
+                    💡 Valores menores = mais sensível (remove mais). Valores maiores = menos sensível (preserva mais).
+                </div>
+            </div>
+            
             <div style="text-align: center; margin-top: 15px;">
                 <button class="btn btn-warning hidden" onclick="removeBackground()" id="removeBgBtn">
                     ✨ Remover Fundo da Imagem
@@ -86,7 +98,6 @@
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
