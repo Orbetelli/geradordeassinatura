@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Assinatura Médica - Versão Híbrida</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🩺 Gerador de Assinatura Médica</h1>
+        <div class="info-box">
+            💡 <strong>Versão Simples:</strong> Remoção de fundo por detecção de cor! 🎨
+            <br><small>⚡ Rápido e sem dependências externas</small>
+        </div>
+        
+        <!-- SEÇÃO DE UPLOAD -->
+        <div class="upload-section">
+            <div class="file-input-wrapper">
+                <label for="fileInput" class="file-input-label">
+                    📁 Selecionar Imagem da Assinatura
+                </label>
+                <input type="file" id="fileInput" accept="image/*">
+            </div>
+            <div id="fileName" style="text-align: center; margin-top: 10px;"></div>
+            <div id="imagePreviewContainer" style="display: none; text-align: center;">
+                <img id="imagePreview" class="image-preview" alt="Preview da imagem">
+            </div>
+            
+            <div style="text-align: center; margin-top: 15px;">
+                <button class="btn btn-warning hidden" onclick="removeBackground()" id="removeBgBtn">
+                    🎨 Remover Fundo (Detecção de Cor)
+                </button>
+            </div>
+
+            <!-- Barra de progresso -->
+            <div id="modelProgress" class="hidden" style="margin-top: 20px;">
+                <div style="background: rgba(255,255,255,0.2); border-radius: 10px; padding: 15px;">
+                    <p style="margin: 0 0 10px 0; text-align: center;">
+                        <strong id="progressText">Carregando modelo de IA...</strong>
+                    </p>
+                    <div style="background: rgba(0,0,0,0.2); border-radius: 5px; height: 20px; overflow: hidden;">
+                        <div id="progressBar" style="background: linear-gradient(90deg, #11998e, #38ef7d); height: 100%; width: 0%; transition: width 0.3s;"></div>
+                    </div>
+                    <p style="margin: 10px 0 0 0; text-align: center; font-size: 0.9em;">
+                        <span id="progressPercent">0%</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SEÇÃO DE AJUSTES AVANÇADOS -->
+        <div class="adjustment-section hidden" id="adjustmentSection">
+            <h3 style="text-align: center; margin-bottom: 20px;">🎨 Ajustes da Assinatura</h3>
+            
+            <!-- OPÇÕES AUTOMÁTICAS (ESTILO PYTHON) -->
+            <div class="auto-filters-box">
+                <h4 style="margin-bottom: 15px;">⚡ Filtros Automáticos (Modo Python)</h4>
+                
+                <div class="checkbox-group">
+                    <input type="checkbox" id="convertToBlack">
+                    <label for="convertToBlack" style="margin-bottom: 0;">
+                        🖤 Converter para preto puro
+                    </label>
+                </div>
+                <div class="helper-text" style="margin-bottom: 15px;">
+                    💡 Descarta todas as cores e preenche com preto (RGB: 0,0,0)
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="cleanWeakPixels">
+                    <label for="cleanWeakPixels" style="margin-bottom: 0;">
+                        🧹 Limpar pixels fracos
+                    </label>
+                </div>
+                <div class="helper-text" style="margin-bottom: 15px;">
+                    💡 Remove pixels quase transparentes (alpha < 15)
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="autoCrop">
+                    <label for="autoCrop" style="margin-bottom: 0;">
+                        ✂️ Crop automático
+                    </label>
+                </div>
+                <div class="helper-text" style="margin-bottom: 15px;">
+                    💡 Remove bordas vazias e adiciona margem de 15px
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="applyPythonFilters">
+                    <label for="applyPythonFilters" style="margin-bottom: 0;">
+                        🐍 Aplicar filtros padrão Python
+                    </label>
+                </div>
+                <div class="helper-text" style="margin-bottom: 15px;">
+                    💡 Contraste 2.0x + Nitidez automática (desativa controles manuais)
+                </div>
+            </div>
+
+            <!-- CONTROLES MANUAIS -->
+            <div class="manual-controls" id="manualControls">
+                <h4 style="margin: 25px 0 15px 0;">🎚️ Controles Manuais</h4>
+                
+                <div class="form-group">
+                    <label for="contrast">
+                        Contraste: <span class="threshold-value" id="contrastValue">100%</span>
+                    </label>
+                    <input type="range" id="contrast" min="50" max="300" value="100" step="5">
+                    <div class="helper-text">💡 Ajuste de 50% a 300%</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="sharpness">
+                        Nitidez: <span class="threshold-value" id="sharpnessValue">0</span>
+                    </label>
+                    <input type="range" id="sharpness" min="0" max="20" value="0" step="1">
+                    <div class="helper-text">💡 Deixa as bordas mais definidas (0-20)</div>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 20px;">
+                <button class="btn btn-secondary" onclick="resetAdjustments()">
+                    🔄 Restaurar Padrão
+                </button>
+                <button class="btn btn-info" onclick="applyFiltersPreview()">
+                    👁️ Visualizar Filtros
+                </button>
+            </div>
+        </div>
+
+        <!-- CHECKBOX SEGUNDA ASSINATURA -->
+        <div class="checkbox-group" style="margin-bottom: 25px;">
+            <input type="checkbox" id="enableSecondSignature">
+            <label for="enableSecondSignature" style="margin-bottom: 0;">
+                📝 Adicionar segunda assinatura (lado a lado)
+            </label>
+        </div>
+
+        <!-- DADOS DO MÉDICO 1 -->
+        <div id="doctor1Section">
+            <h3 style="margin-bottom: 15px;">👨‍⚕️ Assinatura Principal (Esquerda)</h3>
+            
+            <div class="form-group">
+                <label for="doctorName">Nome do Médico (com Dr./Dra.):</label>
+                <input type="text" id="doctorName" placeholder="Ex: Dr. João Silva">
+            </div>
+
+            <div class="form-group">
+                <label for="doctorCRM">CRM com Estado:</label>
+                <input type="text" id="doctorCRM" placeholder="Ex: CRM 12345/SP">
+            </div>
+        </div>
+
+        <!-- DADOS DO MÉDICO 2 (INICIALMENTE OCULTO) -->
+        <div id="doctor2Section" class="hidden">
+            <h3 style="margin-bottom: 15px;">👨‍⚕️ Segunda Assinatura (Direita)</h3>
+            
+            <div class="upload-section" style="margin-bottom: 20px;">
+                <div class="file-input-wrapper">
+                    <label for="fileInput2" class="file-input-label">
+                        📁 Selecionar Segunda Assinatura
+                    </label>
+                    <input type="file" id="fileInput2" accept="image/*">
+                </div>
+                <div id="fileName2" style="text-align: center; margin-top: 10px;"></div>
+                <div id="imagePreviewContainer2" style="display: none; text-align: center;">
+                    <img id="imagePreview2" class="image-preview" alt="Preview da segunda assinatura">
+                </div>
+                
+                <div style="text-align: center; margin-top: 15px;">
+                    <button class="btn btn-warning hidden" onclick="removeBackground2()" id="removeBgBtn2">
+                        🎨 Remover Fundo (Assinatura 2)
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="doctorName2">Nome do Segundo Médico (com Dr./Dra.):</label>
+                <input type="text" id="doctorName2" placeholder="Ex: Dr. Maria Costa">
+            </div>
+
+            <div class="form-group">
+                <label for="doctorCRM2">CRM com Estado:</label>
+                <input type="text" id="doctorCRM2" placeholder="Ex: CRM 67890/SP">
+            </div>
+        </div>
+
+        <!-- FRASES EXTRAS -->
+        <div class="checkbox-group">
+            <input type="checkbox" id="addExtraPhrase">
+            <label for="addExtraPhrase" style="margin-bottom: 0;">Adicionar frases extras</label>
+        </div>
+
+        <div class="form-group hidden" id="extraPhraseGroup">
+            <label for="extraPhrase">Frase adicional 1:</label>
+            <textarea id="extraPhrase" placeholder="Digite a primeira frase extra" rows="2"></textarea>
+        </div>
+
+        <div class="form-group hidden" id="extraPhrase2Group">
+            <label for="extraPhrase2">Frase adicional 2:</label>
+            <textarea id="extraPhrase2" placeholder="Segunda frase (opcional)" rows="2"></textarea>
+        </div>
+
+        <!-- LOADING -->
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p style="margin-top: 15px;" id="loadingText">Processando...</p>
+        </div>
+
+        <div id="messageContainer"></div>
+
+        <!-- BOTÕES -->
+        <div class="buttons-container">
+            <button class="btn btn-primary" onclick="generateSignature()" id="generateBtn">
+                ✨ Gerar Assinatura
+            </button>
+            <button class="btn btn-success hidden" onclick="downloadImage()" id="downloadBtn">
+                💾 Baixar Assinatura
+            </button>
+        </div>
+
+        <!-- PREVIEW -->
+        <div class="preview-section">
+            <canvas id="previewCanvas" width="600" height="120"></canvas>
+        </div>
+    </div>
+
+    <!-- Script principal -->
+    <script src="script.js"></script>
+</body>
+</html>
