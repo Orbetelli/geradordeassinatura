@@ -140,14 +140,27 @@
         <!-- DADOS DO MÉDICO 1 -->
         <div id="doctor1Section">
             <h3 style="margin-bottom: 15px;">👨‍⚕️ Assinatura Principal (Esquerda)</h3>
+
+            <!-- SELETOR DE TIPO DE PROFISSIONAL 1 -->
+            <div class="form-group">
+                <label>Tipo de Profissional:</label>
+                <div class="profession-selector" id="professionSelector1">
+                    <button type="button" class="profession-btn active" data-type="medico" data-register="CRM" onclick="selectProfession(1, this)">
+                        🩺 Médico
+                    </button>
+                    <button type="button" class="profession-btn" data-type="veterinario" data-register="CRMV" onclick="selectProfession(1, this)">
+                        🐾 Veterinário
+                    </button>
+                </div>
+            </div>
             
             <div class="form-group">
-                <label for="doctorName">Nome do Médico (com Dr./Dra.):</label>
+                <label for="doctorName">Nome do Profissional (com título):</label>
                 <input type="text" id="doctorName" placeholder="Ex: Dr. João Silva">
             </div>
 
             <div class="form-group">
-                <label for="doctorCRM">CRM com Estado:</label>
+                <label for="doctorCRM" id="doctorCRMLabel">CRM com Estado:</label>
                 <input type="text" id="doctorCRM" placeholder="Ex: CRM 12345/SP">
             </div>
         </div>
@@ -175,15 +188,38 @@
                 </div>
             </div>
 
+            <!-- SELETOR DE TIPO DE PROFISSIONAL 2 -->
             <div class="form-group">
-                <label for="doctorName2">Nome do Segundo Médico (com Dr./Dra.):</label>
+                <label>Tipo de Profissional:</label>
+                <div class="profession-selector" id="professionSelector2">
+                    <button type="button" class="profession-btn active" data-type="medico" data-register="CRM" onclick="selectProfession(2, this)">
+                        🩺 Médico
+                    </button>
+                    <button type="button" class="profession-btn" data-type="veterinario" data-register="CRMV" onclick="selectProfession(2, this)">
+                        🐾 Veterinário
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="doctorName2">Nome do Profissional (com título):</label>
                 <input type="text" id="doctorName2" placeholder="Ex: Dr. Maria Costa">
             </div>
 
             <div class="form-group">
-                <label for="doctorCRM2">CRM com Estado:</label>
+                <label for="doctorCRM2" id="doctorCRMLabel2">CRM com Estado:</label>
                 <input type="text" id="doctorCRM2" placeholder="Ex: CRM 67890/SP">
             </div>
+        </div>
+
+        <!-- SELETOR DE FONTE -->
+        <div class="form-group">
+            <label for="fontSelector">🔤 Fonte da Assinatura:</label>
+            <select id="fontSelector">
+                <option value="Arial">Arial (padrão)</option>
+                <option value="Times New Roman">Times New Roman</option>
+                <option value="Courier New">Courier New</option>
+            </select>
         </div>
 
         <!-- FRASES EXTRAS -->

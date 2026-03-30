@@ -1,14 +1,24 @@
 # 🩺 Gerador de Assinatura Médica
 
-Ferramenta web gratuita para criar assinaturas profissionais para documentos médicos.
+Ferramenta web gratuita para criar assinaturas profissionais para documentos médicos e veterinários.
 
 ---
 
 ## 🚀 Funcionalidades
 
 ### 📝 **Assinaturas**
-- ✅ **Assinatura Simples** - Uma assinatura com nome e CRM
-- ✅ **Assinatura Dupla** - Duas assinaturas lado a lado (médico + residente, médico + enfermeiro, etc)
+- ✅ **Assinatura Simples** - Uma assinatura com nome e registro
+- ✅ **Assinatura Dupla** - Duas assinaturas lado a lado (médico + residente, médico + veterinário, etc)
+
+### 👨‍⚕️ **Tipo de Profissional**
+- ✅ **Médico** - Registro CRM (ex: CRM 12345/SP)
+- ✅ **Veterinário** - Registro CRMV (ex: CRMV 98765/SP)
+- ✅ Label e placeholder do campo de registro se adaptam automaticamente
+
+### 🔤 **Fontes**
+- ✅ **Arial** (padrão)
+- ✅ **Times New Roman**
+- ✅ **Courier New**
 
 ### 🎨 **Processamento de Imagem**
 - ✅ **Remoção de Fundo** - Remove fundos brancos/claros automaticamente
@@ -21,7 +31,7 @@ Ferramenta web gratuita para criar assinaturas profissionais para documentos mé
 
 ### 📋 **Campos Personalizáveis**
 - ✅ Nome completo (ex: Dr. João Silva)
-- ✅ CRM com estado (ex: CRM 12345/SP)
+- ✅ Registro com estado (CRM ou CRMV, conforme o tipo de profissional)
 - ✅ Até 2 frases extras por assinatura (especialidade, cargo, etc)
 
 ### 💾 **Exportação**
@@ -48,6 +58,12 @@ Ferramenta web gratuita para criar assinaturas profissionais para documentos mé
 ---
 
 ## 📋 Changelog
+
+### **v1.2** - 30/03/2026
+- ✅ **Adicionado seletor de tipo de profissional** (Médico / Veterinário)
+- ✅ Campo de registro adaptável (CRM ou CRMV) com label e placeholder automáticos
+- ✅ **Adicionado seletor de fonte** (Arial, Times New Roman, Courier New)
+- ✅ Suporte a seletor de profissional na assinatura dupla
 
 ### **v1.1** - 09/02/2026
 - ✅ **Adicionada assinatura dupla** (layout lado a lado)

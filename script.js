@@ -2,7 +2,7 @@ console.log('🚀 Gerador de Assinatura Médica - Versão Simples (Sem IA)');
 
 let uploadedImage = null;
 let processedImage = null;
-let uploadedImage2 = null; // Segunda assinatura
+let uploadedImage2 = null;
 let processedImage2 = null;
 let adjustments = {
     contrast: 100,
@@ -13,12 +13,71 @@ let adjustments = {
     applyPythonFilters: false
 };
 
+// Estado do tipo de profissional selecionado
+// Mapa: número do médico (1 ou 2) → { type, register }
+const professionState = {
+    1: { type: 'medico', register: 'CRM' },
+    2: { type: 'medico', register: 'CRM' }
+};
+
+// ========================================
+// SELETOR DE TIPO DE PROFISSIONAL
+// ========================================
+
+/**
+ * Chamado ao clicar em qualquer botão de profissão.
+ * @param {number} doctorIndex - 1 ou 2
+ * @param {HTMLElement} btn - botão clicado
+ */
+function selectProfession(doctorIndex, btn) {
+    const register = btn.dataset.register;
+    const type = btn.dataset.type;
+
+    // Atualiza estado
+    professionState[doctorIndex].type = type;
+    professionState[doctorIndex].register = register;
+
+    // Atualiza visual dos botões do grupo
+    const selector = document.getElementById(`professionSelector${doctorIndex}`);
+    selector.querySelectorAll('.profession-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    // Atualiza label + placeholder do campo de registro
+    updateRegisterField(doctorIndex, register);
+}
+
+/**
+ * Atualiza o label e placeholder do campo de registro conforme o profissional.
+ */
+function updateRegisterField(doctorIndex, register) {
+    const suffix = doctorIndex === 1 ? '' : '2';
+    const label = document.getElementById(`doctorCRMLabel${suffix || ''}`);
+    const input = document.getElementById(`doctorCRM${suffix}`);
+
+    // Exemplos de placeholder por tipo de registro
+    const placeholders = {
+        CRM:  'Ex: CRM 12345/SP',
+        CRMV: 'Ex: CRMV 98765/SP'
+    };
+
+    if (label) {
+        label.innerHTML = `${register} com Estado: <span class="register-badge">${register}</span>`;
+    }
+
+    if (input) {
+        input.placeholder = placeholders[register] || `Ex: ${register} 12345/SP`;
+    }
+}
+
 // ========================================
 // INICIALIZAÇÃO
 // ========================================
 document.addEventListener('DOMContentLoaded', () => {
     console.log('✅ Aplicação iniciada');
     setupEventListeners();
+    // Garante labels corretos no estado inicial
+    updateRegisterField(1, 'CRM');
+    updateRegisterField(2, 'CRM');
 });
 
 function setupEventListeners() {
@@ -132,6 +191,12 @@ function setupEventListeners() {
                 document.getElementById('fileName2').textContent = '';
                 document.getElementById('imagePreviewContainer2').style.display = 'none';
                 document.getElementById('removeBgBtn2').classList.add('hidden');
+                // Reseta profissão 2 para médico
+                professionState[2] = { type: 'medico', register: 'CRM' };
+                const selector2 = document.getElementById('professionSelector2');
+                selector2.querySelectorAll('.profession-btn').forEach(b => b.classList.remove('active'));
+                selector2.querySelector('[data-type="medico"]').classList.add('active');
+                updateRegisterField(2, 'CRM');
             }
         });
     }
@@ -225,12 +290,11 @@ async function removeBackground() {
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const data = imageData.data;
         
-        // Detecta cor de fundo (média dos cantos)
         const corners = [
-            {r: data[0], g: data[1], b: data[2]},  // Top-left
-            {r: data[(canvas.width - 1) * 4], g: data[(canvas.width - 1) * 4 + 1], b: data[(canvas.width - 1) * 4 + 2]},  // Top-right
-            {r: data[((canvas.height - 1) * canvas.width) * 4], g: data[((canvas.height - 1) * canvas.width) * 4 + 1], b: data[((canvas.height - 1) * canvas.width) * 4 + 2]},  // Bottom-left
-            {r: data[((canvas.height - 1) * canvas.width + canvas.width - 1) * 4], g: data[((canvas.height - 1) * canvas.width + canvas.width - 1) * 4 + 1], b: data[((canvas.height - 1) * canvas.width + canvas.width - 1) * 4 + 2]}  // Bottom-right
+            {r: data[0], g: data[1], b: data[2]},
+            {r: data[(canvas.width - 1) * 4], g: data[(canvas.width - 1) * 4 + 1], b: data[(canvas.width - 1) * 4 + 2]},
+            {r: data[((canvas.height - 1) * canvas.width) * 4], g: data[((canvas.height - 1) * canvas.width) * 4 + 1], b: data[((canvas.height - 1) * canvas.width) * 4 + 2]},
+            {r: data[((canvas.height - 1) * canvas.width + canvas.width - 1) * 4], g: data[((canvas.height - 1) * canvas.width + canvas.width - 1) * 4 + 1], b: data[((canvas.height - 1) * canvas.width + canvas.width - 1) * 4 + 2]}
         ];
         
         const bgR = Math.round((corners[0].r + corners[1].r + corners[2].r + corners[3].r) / 4);
@@ -288,7 +352,6 @@ async function removeBackground() {
         };
         
         img.src = dataUrl;
-        console.log('✅ Fundo removido!');
 
     } catch (error) {
         console.error('❌ Erro:', error);
@@ -320,8 +383,6 @@ async function removeBackground2() {
     progressPercent.textContent = '30%';
 
     try {
-        console.log('🎨 Removendo fundo da assinatura 2...');
-        
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
         canvas.width = uploadedImage2.width;
@@ -345,8 +406,6 @@ async function removeBackground2() {
         const bgR = Math.round((corners[0].r + corners[1].r + corners[2].r + corners[3].r) / 4);
         const bgG = Math.round((corners[0].g + corners[1].g + corners[2].g + corners[3].g) / 4);
         const bgB = Math.round((corners[0].b + corners[1].b + corners[2].b + corners[3].b) / 4);
-        
-        console.log(`🎨 Cor de fundo detectada (assinatura 2): RGB(${bgR}, ${bgG}, ${bgB})`);
         
         const threshold = 80;
         
@@ -396,7 +455,6 @@ async function removeBackground2() {
         };
         
         img.src = dataUrl;
-        console.log('✅ Fundo da assinatura 2 removido!');
 
     } catch (error) {
         console.error('❌ Erro:', error);
@@ -475,14 +533,14 @@ async function generateSignature() {
     }
 
     const doctorName = document.getElementById('doctorName').value.trim();
-    const doctorCRM = document.getElementById('doctorCRM').value.trim();
+    const doctorCRM  = document.getElementById('doctorCRM').value.trim();
+    const register1  = professionState[1].register;
 
     if (!doctorName || !doctorCRM) {
-        showMessage('⚠️ Preencha nome e CRM da primeira assinatura!', 'error');
+        showMessage(`⚠️ Preencha nome e ${register1} da primeira assinatura!`, 'error');
         return;
     }
 
-    // Verifica segunda assinatura
     const hasSecondSignature = document.getElementById('enableSecondSignature').checked;
     
     if (hasSecondSignature) {
@@ -492,10 +550,11 @@ async function generateSignature() {
         }
 
         const doctorName2 = document.getElementById('doctorName2').value.trim();
-        const doctorCRM2 = document.getElementById('doctorCRM2').value.trim();
+        const doctorCRM2  = document.getElementById('doctorCRM2').value.trim();
+        const register2   = professionState[2].register;
 
         if (!doctorName2 || !doctorCRM2) {
-            showMessage('⚠️ Preencha nome e CRM da segunda assinatura!', 'error');
+            showMessage(`⚠️ Preencha nome e ${register2} da segunda assinatura!`, 'error');
             return;
         }
     }
@@ -541,7 +600,7 @@ function applyContrast(imageData, contrastValue) {
         g = ((g - 128) * factor) + 128;
         b = ((b - 128) * factor) + 128;
         
-        data[i] = Math.max(0, Math.min(255, r));
+        data[i]     = Math.max(0, Math.min(255, r));
         data[i + 1] = Math.max(0, Math.min(255, g));
         data[i + 2] = Math.max(0, Math.min(255, b));
     }
@@ -588,10 +647,8 @@ function convertToBlackPure(imageData) {
     const data = imageData.data;
     
     for (let i = 0; i < data.length; i += 4) {
-        const alpha = data[i + 3];
-        
-        if (alpha > 0) {
-            data[i] = 0;
+        if (data[i + 3] > 0) {
+            data[i]     = 0;
             data[i + 1] = 0;
             data[i + 2] = 0;
         }
@@ -604,9 +661,7 @@ function cleanWeakPixels(imageData, threshold = 15) {
     const data = imageData.data;
     
     for (let i = 0; i < data.length; i += 4) {
-        const alpha = data[i + 3];
-        
-        if (alpha < threshold) {
+        if (data[i + 3] < threshold) {
             data[i + 3] = 0;
         }
     }
@@ -627,9 +682,7 @@ function autoCropCanvas(canvas, margin = 15) {
     for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
             const i = (y * width + x) * 4;
-            const alpha = data[i + 3];
-            
-            if (alpha > 0) {
+            if (data[i + 3] > 0) {
                 hasContent = true;
                 if (x < minX) minX = x;
                 if (x > maxX) maxX = x;
@@ -646,15 +699,13 @@ function autoCropCanvas(canvas, margin = 15) {
     maxX = Math.min(width - 1, maxX + margin);
     maxY = Math.min(height - 1, maxY + margin);
     
-    const cropWidth = maxX - minX + 1;
+    const cropWidth  = maxX - minX + 1;
     const cropHeight = maxY - minY + 1;
     
     const croppedCanvas = document.createElement('canvas');
     croppedCanvas.width = cropWidth;
     croppedCanvas.height = cropHeight;
-    const croppedCtx = croppedCanvas.getContext('2d');
-    
-    croppedCtx.drawImage(canvas, minX, minY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+    croppedCanvas.getContext('2d').drawImage(canvas, minX, minY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
     
     return croppedCanvas;
 }
@@ -671,7 +722,6 @@ function applyAllFilters(canvas, ctx) {
             imageData = applyContrast(imageData, adjustments.contrast);
             ctx.putImageData(imageData, 0, 0);
         }
-        
         if (adjustments.sharpness > 0) {
             applySharpness(canvas, adjustments.sharpness);
         }
@@ -696,17 +746,36 @@ function applyAllFilters(canvas, ctx) {
     return canvas;
 }
 
+// ========================================
+// GERAÇÃO DA ASSINATURA FINAL (SIMPLES)
+// ========================================
+
+/**
+ * Retorna a fonte selecionada pelo usuário.
+ */
+function getSelectedFont() {
+    const select = document.getElementById('fontSelector');
+    return select ? select.value : 'Arial';
+}
+
+/**
+ * Monta o texto da assinatura usando o registro correto do tipo de profissional.
+ */
+function buildSignatureText(name, registerValue, registerType, extraPhrase, extraPhrase2) {
+    let texto = `${name}\n${registerType}: ${registerValue}`;
+    if (extraPhrase)  texto += '\n' + extraPhrase;
+    if (extraPhrase2) texto += '\n' + extraPhrase2;
+    return texto;
+}
+
 function createFinalSignature(doctorName, doctorCRM) {
     const finalCanvas = document.getElementById('previewCanvas');
     const finalCtx = finalCanvas.getContext('2d', { alpha: true });
 
-    const larguraFinal = 600; // Aumentado para comportar 2 assinaturas
-    const alturaFinal = 120;
-
-    finalCanvas.width = larguraFinal;
-    finalCanvas.height = alturaFinal;
+    finalCanvas.width  = 600;
+    finalCanvas.height = 120;
     finalCtx.fillStyle = 'white';
-    finalCtx.fillRect(0, 0, larguraFinal, alturaFinal);
+    finalCtx.fillRect(0, 0, 600, 120);
 
     const imagePreview = document.getElementById('imagePreview');
     if (!imagePreview || !imagePreview.src) return;
@@ -718,25 +787,19 @@ function createFinalSignature(doctorName, doctorCRM) {
     previewImage.src = imagePreview.src;
 }
 
-// ========================================
-// CRIAR ASSINATURA DUPLA (LADO A LADO)
-// ========================================
 function createDoubleSignature(doctorName, doctorCRM) {
     const finalCanvas = document.getElementById('previewCanvas');
     const finalCtx = finalCanvas.getContext('2d', { alpha: true });
 
-    const larguraFinal = 600;
-    const alturaFinal = 120;
-
-    finalCanvas.width = larguraFinal;
-    finalCanvas.height = alturaFinal;
+    finalCanvas.width  = 600;
+    finalCanvas.height = 120;
     finalCtx.fillStyle = 'white';
-    finalCtx.fillRect(0, 0, larguraFinal, alturaFinal);
+    finalCtx.fillRect(0, 0, 600, 120);
 
     const imagePreview1 = document.getElementById('imagePreview');
     const imagePreview2 = document.getElementById('imagePreview2');
     
-    if (!imagePreview1 || !imagePreview1.src || !imagePreview2 || !imagePreview2.src) return;
+    if (!imagePreview1?.src || !imagePreview2?.src) return;
     
     const previewImage1 = new Image();
     const previewImage2 = new Image();
@@ -757,106 +820,77 @@ function createDoubleSignature(doctorName, doctorCRM) {
 }
 
 function processDoubleImages(sourceImage1, sourceImage2, finalCanvas, finalCtx, doctorName1, doctorCRM1) {
-    // Processa primeira assinatura
     const tempCanvas1 = document.createElement('canvas');
     const tempCtx1 = tempCanvas1.getContext('2d', { alpha: true, willReadFrequently: true });
-    tempCanvas1.width = sourceImage1.width;
+    tempCanvas1.width  = sourceImage1.width;
     tempCanvas1.height = sourceImage1.height;
     tempCtx1.drawImage(sourceImage1, 0, 0);
     const processedCanvas1 = applyAllFilters(tempCanvas1, tempCtx1);
     
-    // Processa segunda assinatura
     const tempCanvas2 = document.createElement('canvas');
     const tempCtx2 = tempCanvas2.getContext('2d', { alpha: true, willReadFrequently: true });
-    tempCanvas2.width = sourceImage2.width;
+    tempCanvas2.width  = sourceImage2.width;
     tempCanvas2.height = sourceImage2.height;
     tempCtx2.drawImage(sourceImage2, 0, 0);
     const processedCanvas2 = applyAllFilters(tempCanvas2, tempCtx2);
     
-    const larguraFinal = finalCanvas.width;
-    const alturaFinal = finalCanvas.height;
+    const larguraFinal  = finalCanvas.width;
+    const alturaFinal   = finalCanvas.height;
+    const maxLargura    = 240;
+    const maxAltura     = 50;
     
-    // Espaço para cada assinatura (metade do canvas com margem)
-    const maxLarguraAssinatura = 240; // Metade menos margem
-    const maxAlturaAssinatura = 50;
+    const proporcao1 = Math.min(maxLargura / processedCanvas1.width, maxAltura / processedCanvas1.height, 1.0);
+    const novaLargura1 = Math.floor(processedCanvas1.width  * proporcao1);
+    const novaAltura1  = Math.floor(processedCanvas1.height * proporcao1);
     
-    // Calcula escala para assinatura 1
-    const proporcao1 = Math.min(
-        maxLarguraAssinatura / processedCanvas1.width,
-        maxAlturaAssinatura / processedCanvas1.height,
-        1.0
-    );
-    const novaLargura1 = Math.floor(processedCanvas1.width * proporcao1);
-    const novaAltura1 = Math.floor(processedCanvas1.height * proporcao1);
+    const proporcao2 = Math.min(maxLargura / processedCanvas2.width, maxAltura / processedCanvas2.height, 1.0);
+    const novaLargura2 = Math.floor(processedCanvas2.width  * proporcao2);
+    const novaAltura2  = Math.floor(processedCanvas2.height * proporcao2);
     
-    // Calcula escala para assinatura 2
-    const proporcao2 = Math.min(
-        maxLarguraAssinatura / processedCanvas2.width,
-        maxAlturaAssinatura / processedCanvas2.height,
-        1.0
-    );
-    const novaLargura2 = Math.floor(processedCanvas2.width * proporcao2);
-    const novaAltura2 = Math.floor(processedCanvas2.height * proporcao2);
-    
-    finalCtx.font = 'bold 11px Arial';
+    finalCtx.font      = `bold 11px "${getSelectedFont()}"`;
     finalCtx.fillStyle = 'black';
     finalCtx.textAlign = 'center';
 
-    // Dados do médico 1
     const doctorName2 = document.getElementById('doctorName2').value.trim();
-    const doctorCRM2 = document.getElementById('doctorCRM2').value.trim();
-    
-    let texto1 = `${doctorName1}\nCRM: ${doctorCRM1}`;
-    let texto2 = `${doctorName2}\nCRM: ${doctorCRM2}`;
-    
-    const addExtra = document.getElementById('addExtraPhrase').checked;
-    if (addExtra) {
-        const extraPhrase = document.getElementById('extraPhrase').value.trim();
-        if (extraPhrase) texto1 += '\n' + extraPhrase;
-        
-        const extraPhrase2 = document.getElementById('extraPhrase2').value.trim();
-        if (extraPhrase2) texto2 += '\n' + extraPhrase2;
-    }
+    const doctorCRM2  = document.getElementById('doctorCRM2').value.trim();
+
+    const addExtra    = document.getElementById('addExtraPhrase').checked;
+    const extraPhrase = addExtra ? document.getElementById('extraPhrase').value.trim()  : '';
+    const extraPhrase2 = addExtra ? document.getElementById('extraPhrase2').value.trim() : '';
+
+    // Usa o tipo de registro correto para cada profissional
+    const texto1 = buildSignatureText(doctorName1, doctorCRM1, professionState[1].register, extraPhrase, '');
+    const texto2 = buildSignatureText(doctorName2, doctorCRM2, professionState[2].register, extraPhrase2, '');
 
     const linhas1 = texto1.split('\n');
     const linhas2 = texto2.split('\n');
-    const alturaTexto1 = linhas1.length * 13;
-    const alturaTexto2 = linhas2.length * 13;
-    
     const margemInferior = 5;
     
-    // Posiciona assinatura 1 (esquerda)
-    const alturaConteudo1 = novaAltura1 + margemInferior + alturaTexto1;
-    const yInicio1 = Math.floor((alturaFinal - alturaConteudo1) / 2);
-    const xCentro1 = larguraFinal / 4; // Centro do quadrante esquerdo
-    const xInicio1 = Math.floor(xCentro1 - novaLargura1 / 2);
-    
-    // Posiciona assinatura 2 (direita)
-    const alturaConteudo2 = novaAltura2 + margemInferior + alturaTexto2;
-    const yInicio2 = Math.floor((alturaFinal - alturaConteudo2) / 2);
-    const xCentro2 = (larguraFinal * 3) / 4; // Centro do quadrante direito
-    const xInicio2 = Math.floor(xCentro2 - novaLargura2 / 2);
+    // Assinatura 1 (esquerda)
+    const alturaConteudo1 = novaAltura1 + margemInferior + linhas1.length * 13;
+    const yInicio1  = Math.floor((alturaFinal - alturaConteudo1) / 2);
+    const xCentro1  = larguraFinal / 4;
+    const xInicio1  = Math.floor(xCentro1 - novaLargura1 / 2);
 
-    // Desenha assinatura 1
+    // Assinatura 2 (direita)
+    const alturaConteudo2 = novaAltura2 + margemInferior + linhas2.length * 13;
+    const yInicio2  = Math.floor((alturaFinal - alturaConteudo2) / 2);
+    const xCentro2  = (larguraFinal * 3) / 4;
+    const xInicio2  = Math.floor(xCentro2 - novaLargura2 / 2);
+
     finalCtx.imageSmoothingEnabled = true;
     finalCtx.imageSmoothingQuality = 'high';
-    finalCtx.drawImage(processedCanvas1, 0, 0, processedCanvas1.width, processedCanvas1.height, 
-                      xInicio1, yInicio1, novaLargura1, novaAltura1);
 
-    // Desenha texto assinatura 1
-    const yTexto1 = yInicio1 + novaAltura1 + margemInferior + 11;
+    finalCtx.drawImage(processedCanvas1, 0, 0, processedCanvas1.width, processedCanvas1.height,
+                       xInicio1, yInicio1, novaLargura1, novaAltura1);
     linhas1.forEach((linha, i) => {
-        finalCtx.fillText(linha, xCentro1, yTexto1 + (i * 13));
+        finalCtx.fillText(linha, xCentro1, yInicio1 + novaAltura1 + margemInferior + 11 + (i * 13));
     });
 
-    // Desenha assinatura 2
-    finalCtx.drawImage(processedCanvas2, 0, 0, processedCanvas2.width, processedCanvas2.height, 
-                      xInicio2, yInicio2, novaLargura2, novaAltura2);
-
-    // Desenha texto assinatura 2
-    const yTexto2 = yInicio2 + novaAltura2 + margemInferior + 11;
+    finalCtx.drawImage(processedCanvas2, 0, 0, processedCanvas2.width, processedCanvas2.height,
+                       xInicio2, yInicio2, novaLargura2, novaAltura2);
     linhas2.forEach((linha, i) => {
-        finalCtx.fillText(linha, xCentro2, yTexto2 + (i * 13));
+        finalCtx.fillText(linha, xCentro2, yInicio2 + novaAltura2 + margemInferior + 11 + (i * 13));
     });
 
     finalCanvas.style.display = 'block';
@@ -865,70 +899,58 @@ function processDoubleImages(sourceImage1, sourceImage2, finalCanvas, finalCtx, 
 function processImageAndDraw(sourceImage, finalCanvas, finalCtx, doctorName, doctorCRM) {
     const tempCanvas = document.createElement('canvas');
     const tempCtx = tempCanvas.getContext('2d', { alpha: true, willReadFrequently: true });
-    tempCanvas.width = sourceImage.width;
+    tempCanvas.width  = sourceImage.width;
     tempCanvas.height = sourceImage.height;
-    
     tempCtx.drawImage(sourceImage, 0, 0);
     
     const processedCanvas = applyAllFilters(tempCanvas, tempCtx);
     
     const larguraFinal = finalCanvas.width;
-    const alturaFinal = finalCanvas.height;
-    const maxLarguraAssinatura = 280;
-    const maxAlturaAssinatura = 50;
+    const alturaFinal  = finalCanvas.height;
+    const maxLargura   = 280;
+    const maxAltura    = 50;
     
-    const proporcao = Math.min(
-        maxLarguraAssinatura / processedCanvas.width,
-        maxAlturaAssinatura / processedCanvas.height,
-        1.0
-    );
+    const proporcao   = Math.min(maxLargura / processedCanvas.width, maxAltura / processedCanvas.height, 1.0);
+    const novaLargura = Math.floor(processedCanvas.width  * proporcao);
+    const novaAltura  = Math.floor(processedCanvas.height * proporcao);
     
-    const novaLargura = Math.floor(processedCanvas.width * proporcao);
-    const novaAltura = Math.floor(processedCanvas.height * proporcao);
-    
-    finalCtx.font = 'bold 11px Arial';
+    finalCtx.font      = `bold 11px "${getSelectedFont()}"`;
     finalCtx.fillStyle = 'black';
     finalCtx.textAlign = 'center';
 
-    let texto = `${doctorName}\nCRM: ${doctorCRM}`;
-    const addExtra = document.getElementById('addExtraPhrase').checked;
+    const addExtra     = document.getElementById('addExtraPhrase').checked;
+    const extraPhrase  = addExtra ? document.getElementById('extraPhrase').value.trim()  : '';
+    const extraPhrase2 = addExtra ? document.getElementById('extraPhrase2').value.trim() : '';
 
-    if (addExtra) {
-        const extraPhrase = document.getElementById('extraPhrase').value.trim();
-        const extraPhrase2 = document.getElementById('extraPhrase2').value.trim();
-        if (extraPhrase) texto += '\n' + extraPhrase;
-        if (extraPhrase2) texto += '\n' + extraPhrase2;
-    }
-
+    // Usa o tipo de registro correto
+    const texto  = buildSignatureText(doctorName, doctorCRM, professionState[1].register, extraPhrase, extraPhrase2);
     const linhas = texto.split('\n');
-    const alturaTexto = linhas.length * 13;
     
-    const margemInferior = 5;
-    const alturaConteudo = novaAltura + margemInferior + alturaTexto;
+    const margemInferior  = 5;
+    const alturaConteudo  = novaAltura + margemInferior + linhas.length * 13;
     const yInicioAssinatura = Math.floor((alturaFinal - alturaConteudo) / 2);
     const xInicioAssinatura = Math.floor((larguraFinal - novaLargura) / 2);
 
     finalCtx.imageSmoothingEnabled = true;
     finalCtx.imageSmoothingQuality = 'high';
-    finalCtx.drawImage(processedCanvas, 0, 0, processedCanvas.width, processedCanvas.height, 
-                      xInicioAssinatura, yInicioAssinatura, novaLargura, novaAltura);
+    finalCtx.drawImage(processedCanvas, 0, 0, processedCanvas.width, processedCanvas.height,
+                       xInicioAssinatura, yInicioAssinatura, novaLargura, novaAltura);
 
-    const yTexto = yInicioAssinatura + novaAltura + margemInferior + 11;
     linhas.forEach((linha, i) => {
-        finalCtx.fillText(linha, larguraFinal / 2, yTexto + (i * 13));
+        finalCtx.fillText(linha, larguraFinal / 2, yInicioAssinatura + novaAltura + margemInferior + 11 + (i * 13));
     });
 
     finalCanvas.style.display = 'block';
 }
 
 function downloadImage() {
-    const canvas = document.getElementById('previewCanvas');
+    const canvas     = document.getElementById('previewCanvas');
     const doctorName = document.getElementById('doctorName').value.trim() || 'Assinatura';
 
     canvas.toBlob(function (blob) {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url;
+        a.href     = url;
         a.download = `Assinatura - ${doctorName}.png`;
         document.body.appendChild(a);
         a.click();
