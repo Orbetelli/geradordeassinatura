@@ -1,0 +1,821 @@
+/* ========================================
+   RESET & BASE
+   ======================================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+    color: white;
+}
+
+/* ========================================
+   HEADER & ABAS
+   ======================================== */
+.app-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.app-header h1 {
+    font-size: 2.2em;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    margin-bottom: 20px;
+}
+
+.tabs {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+}
+
+.tab-btn {
+    padding: 12px 28px;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    border-radius: 50px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    backdrop-filter: blur(5px);
+}
+
+.tab-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.8);
+    transform: translateY(-2px);
+}
+
+.tab-btn.active {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: white;
+    color: #5a3e9b;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px);
+}
+
+/* ========================================
+   PAINÉIS
+   ======================================== */
+.tab-panel {
+    display: none;
+}
+
+.tab-panel.active {
+    display: block;
+}
+
+/* ========================================
+   CONTAINER
+   ======================================== */
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+h2 {
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 2em;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+h3, h4 {
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.info-box {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 30px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* ========================================
+   SEÇÕES DE UPLOAD / AJUSTE
+   ======================================== */
+.upload-section {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 15px;
+    padding: 30px;
+    margin-bottom: 30px;
+    border: 2px dashed rgba(255, 255, 255, 0.3);
+    transition: all 0.3s ease;
+}
+
+.upload-section:hover {
+    border-color: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.adjustment-section {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 15px;
+    padding: 30px;
+    margin-bottom: 30px;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    animation: fadeIn 0.5s ease-in;
+}
+
+.auto-filters-box {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* ========================================
+   FORMULÁRIO
+   ======================================== */
+.file-input-wrapper {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.file-input-label {
+    display: block;
+    padding: 15px 30px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 10px;
+    cursor: pointer;
+    text-align: center;
+    font-weight: bold;
+    transition: transform 0.2s ease;
+}
+
+.file-input-label:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+input[type="file"] {
+    display: none;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    font-size: 1.1em;
+}
+
+input[type="text"],
+input[type="range"],
+textarea,
+select {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #333;
+    transition: all 0.3s ease;
+}
+
+select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23555' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 15px center;
+    padding-right: 40px;
+}
+
+select:focus,
+input[type="text"]:focus,
+textarea:focus {
+    outline: none;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+input[type="range"] {
+    padding: 5px;
+    cursor: pointer;
+    height: 40px;
+}
+
+input[type="range"]:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+    height: 8px;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.3);
+}
+
+textarea {
+    resize: vertical;
+    min-height: 60px;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: #667eea;
+}
+
+.helper-text {
+    font-size: 0.9em;
+    opacity: 0.9;
+    margin-top: 5px;
+    font-style: italic;
+}
+
+.threshold-value {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 5px 15px;
+    border-radius: 5px;
+    margin-left: 10px;
+    font-weight: bold;
+    min-width: 60px;
+    text-align: center;
+}
+
+/* ========================================
+   SELETOR DE PROFISSÃO
+   ======================================== */
+.profession-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.profession-btn {
+    padding: 8px 14px;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-radius: 25px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    white-space: nowrap;
+}
+
+.profession-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.7);
+    transform: translateY(-1px);
+}
+
+.profession-btn.active {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: white;
+    color: #5a3e9b;
+    transform: translateY(-1px);
+}
+
+.register-badge {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.25);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: 8px;
+    text-transform: uppercase;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+/* ========================================
+   BOTÕES
+   ======================================== */
+.btn {
+    padding: 15px 40px;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin: 10px;
+}
+
+.btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-primary   { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+.btn-warning   { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; }
+.btn-success   { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; }
+.btn-secondary { background: linear-gradient(135deg, #a8a8a8 0%, #6e6e6e 100%); color: white; }
+.btn-info      { background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); color: white; }
+
+.buttons-container {
+    text-align: center;
+    margin-top: 20px;
+}
+
+/* ========================================
+   LOADING / FEEDBACK
+   ======================================== */
+.loading {
+    display: none;
+    text-align: center;
+    margin: 20px 0;
+}
+
+.spinner {
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-top: 4px solid white;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+
+@keyframes spin {
+    0%   { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.message {
+    padding: 15px;
+    border-radius: 10px;
+    margin: 20px 0;
+    text-align: center;
+    font-weight: bold;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.message-error   { background: rgba(220, 53, 69, 0.2); border: 2px solid rgba(220, 53, 69, 0.5); }
+.message-success { background: rgba(40, 167, 69, 0.2); border: 2px solid rgba(40, 167, 69, 0.5); }
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* ========================================
+   IMAGENS / CANVAS
+   ======================================== */
+.image-preview {
+    max-width: 300px;
+    max-height: 200px;
+    margin: 20px auto;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    display: block;
+    transition: transform 0.3s ease;
+}
+
+.image-preview:hover {
+    transform: scale(1.05);
+}
+
+#previewCanvas {
+    max-width: 100%;
+    border-radius: 10px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+    background: white;
+    display: none;
+}
+
+.preview-section {
+    text-align: center;
+    margin-top: 30px;
+}
+
+/* ========================================
+   ABA GERADOR DE SENHA
+   ======================================== */
+.pw-card {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 15px;
+    padding: 30px;
+    margin-bottom: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.pw-card h3 {
+    font-size: 1.4em;
+    margin-bottom: 6px;
+}
+
+.pw-card .subtitle {
+    font-size: 0.9em;
+    opacity: 0.8;
+    margin-bottom: 24px;
+}
+
+.pw-toggle-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+}
+
+.pw-toggle-row .tlabel { font-size: 14px; font-weight: 600; }
+.pw-toggle-row .tdesc  { font-size: 12px; opacity: 0.75; margin-top: 2px; }
+
+/* Switch toggle */
+.pw-switch {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.pw-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.pw-slider-sw {
+    position: absolute;
+    inset: 0;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.pw-slider-sw::before {
+    content: '';
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    left: 3px;
+    top: 3px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.pw-switch input:checked + .pw-slider-sw {
+    background: rgba(255, 255, 255, 0.85);
+}
+
+.pw-switch input:checked + .pw-slider-sw::before {
+    transform: translateX(20px);
+    background: #764ba2;
+}
+
+.pw-simple-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.pw-simple-row .slabel {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Input row */
+.pw-input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 10px;
+    padding: 0 12px;
+    height: 46px;
+    background: rgba(255, 255, 255, 0.15);
+    margin-bottom: 0;
+}
+
+.pw-input-row input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 15px;
+    color: white;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.pw-input-row input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.pw-input-row button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.7);
+    display: flex;
+    align-items: center;
+    padding: 4px;
+    border-radius: 4px;
+    transition: color 0.2s;
+}
+
+.pw-input-row button:hover {
+    color: white;
+}
+
+/* Slider senha */
+.pw-slider-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.pw-slider-val {
+    font-weight: 700;
+    font-size: 15px;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 2px 12px;
+    border-radius: 20px;
+}
+
+input.pw-range {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.3);
+    outline: none;
+    cursor: pointer;
+    padding: 0;
+    border: none;
+}
+
+input.pw-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: white;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    border: 3px solid #764ba2;
+}
+
+/* Botão gerar senha */
+.pw-gen-btn {
+    width: 100%;
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.95);
+    color: #5a3e9b;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: 'Segoe UI', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 20px;
+}
+
+.pw-gen-btn:hover {
+    background: white;
+    transform: translateY(-1px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.pw-gen-btn:active {
+    transform: scale(0.99);
+}
+
+/* Lista de senhas geradas */
+.pw-results-label {
+    font-size: 13px;
+    opacity: 0.8;
+    margin-bottom: 10px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.pw-password-item {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 10px;
+    padding: 0 14px;
+    height: 48px;
+    margin-bottom: 8px;
+    gap: 8px;
+    animation: fadeIn 0.3s ease;
+}
+
+.pw-password-item span {
+    flex: 1;
+    font-family: 'Courier New', monospace;
+    font-size: 15px;
+    color: white;
+    letter-spacing: 1px;
+}
+
+.pw-password-item button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.6);
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    transition: color 0.2s;
+}
+
+.pw-password-item button:hover { color: white; }
+.pw-password-item button.copied { color: #38ef7d; }
+
+/* ========================================
+   MODAL USUÁRIOS SALVOS
+   ======================================== */
+.pw-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+}
+
+.pw-modal-overlay.open {
+    display: flex;
+}
+
+.pw-modal {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    padding: 28px;
+    width: 90%;
+    max-width: 420px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.pw-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.pw-modal-header h3 {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.pw-modal-header button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 22px;
+}
+
+.pw-user-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.pw-user-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    font-size: 14px;
+}
+
+.pw-user-item:last-child {
+    border-bottom: none;
+}
+
+.pw-user-item .uemail {
+    opacity: 0.7;
+    font-size: 12px;
+    margin-top: 2px;
+}
+
+.pw-user-item .uactions {
+    display: flex;
+    gap: 8px;
+}
+
+.pw-user-item button {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    color: white;
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    transition: background 0.2s;
+}
+
+.pw-user-item button:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.pw-user-item .del-btn {
+    background: rgba(220, 53, 69, 0.3);
+}
+
+.pw-empty {
+    text-align: center;
+    opacity: 0.7;
+    font-size: 14px;
+    padding: 24px 0;
+}
+
+/* ========================================
+   RESPONSIVIDADE
+   ======================================== */
+@media (max-width: 768px) {
+    .container {
+        padding: 20px;
+    }
+
+    h2 {
+        font-size: 1.6em;
+    }
+
+    .btn {
+        padding: 12px 24px;
+        font-size: 14px;
+    }
+
+    .profession-btn {
+        padding: 7px 11px;
+        font-size: 12px;
+    }
+}
