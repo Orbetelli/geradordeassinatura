@@ -1,26 +1,28 @@
-# 🩺 Gerador de Assinatura Médica
+# 🏥 Mobilemed Tools
 
-Ferramenta web gratuita para criar assinaturas profissionais para documentos médicos e veterinários.
+Ferramenta web gratuita com dois módulos integrados: **Gerador de Assinatura Médica** e **Gerador de Senha** — tudo em uma interface unificada com sistema de abas.
 
 ---
 
 ## 🚀 Funcionalidades
 
-### 📝 **Assinaturas**
+### 🩺 **Gerador de Assinatura Médica**
+
+#### 📝 Assinaturas
 - ✅ **Assinatura Simples** - Uma assinatura com nome e registro
 - ✅ **Assinatura Dupla** - Duas assinaturas lado a lado (médico + residente, médico + veterinário, etc)
 
-### 👨‍⚕️ **Tipo de Profissional**
+#### 👨‍⚕️ Tipo de Profissional
 - ✅ **Médico** - Registro CRM (ex: CRM 12345/SP)
 - ✅ **Veterinário** - Registro CRMV (ex: CRMV 98765/SP)
 - ✅ Label e placeholder do campo de registro se adaptam automaticamente
 
-### 🔤 **Fontes**
+#### 🔤 Fontes
 - ✅ **Arial** (padrão)
 - ✅ **Times New Roman**
 - ✅ **Courier New**
 
-### 🎨 **Processamento de Imagem**
+#### 🎨 Processamento de Imagem
 - ✅ **Remoção de Fundo** - Remove fundos brancos/claros automaticamente
 - ✅ **Converter para Preto** - Transforma assinaturas coloridas em preto puro
 - ✅ **Limpar Pixels Fracos** - Remove sujeira e bordas indesejadas
@@ -29,15 +31,43 @@ Ferramenta web gratuita para criar assinaturas profissionais para documentos mé
 - ✅ **Ajuste de Nitidez** - 0 a 20 (manual ou automático)
 - ✅ **Filtros Python** - Contraste 2.0x + nitidez fixa (modo automático)
 
-### 📋 **Campos Personalizáveis**
+#### 📋 Campos Personalizáveis
 - ✅ Nome completo (ex: Dr. João Silva)
 - ✅ Registro com estado (CRM ou CRMV, conforme o tipo de profissional)
 - ✅ Até 2 frases extras por assinatura (especialidade, cargo, etc)
 
-### 💾 **Exportação**
+#### 💾 Exportação
 - ✅ Download em PNG de alta qualidade
 - ✅ Preview em tempo real
 - ✅ Canvas otimizado (600x120px para dupla, 480x120px para simples)
+
+---
+
+### 🔐 **Gerador de Senha**
+
+#### ⚙️ Configurações
+- ✅ **Prefixo configurável** - Padrão `Mobile`, totalmente editável
+- ✅ **Quantidade** - Gere de 1 a 10 senhas de uma vez
+- ✅ **Comprimento** - De 6 a 16 caracteres após o `@`
+- ✅ **Caracteres especiais** - Toggle para incluir/excluir
+- ✅ **Apenas maiúsculas** - Toggle para modo all-caps
+- ✅ Garante sempre pelo menos 1 maiúscula, 1 minúscula, 1 número e 1 especial
+
+#### 🏢 Modo Implantação
+- ✅ **Geração em lote** - Digite vários nomes, um por linha
+- ✅ **E-mail automático** - Converte nome para `joao.silva@dominio.com.br`
+- ✅ **Domínio configurável** - Padrão `mobilemed.com.br`, editável
+- ✅ **Contador de nomes** em tempo real
+- ✅ Cada usuário gerado é salvo automaticamente em Usuários Salvos
+
+#### 👥 Usuários Salvos
+- ✅ Lista de todos os usuários gerados no Modo Implantação
+- ✅ **Copiar Credenciais** - Copia `Email: x | Senha: y` de todos os usuários
+- ✅ **Copiar Mensagem** - Copia mensagem completa de boas-vindas com portal, login e senha temporária
+- ✅ Copiar senha individual por usuário
+- ✅ Remover usuário individualmente
+
+---
 
 ### 🔒 **Privacidade**
 - ✅ 100% processamento local (nada é enviado para servidores)
@@ -58,6 +88,16 @@ Ferramenta web gratuita para criar assinaturas profissionais para documentos mé
 ---
 
 ## 📋 Changelog
+
+### **v2.0** - 24/04/2026
+- ✅ **Integração dos dois projetos** em uma única interface com sistema de abas
+- ✅ **Gerador de Senha** integrado com visual unificado (tema roxo/lilás)
+- ✅ **Modo Implantação com geração em lote** - múltiplos nomes por linha
+- ✅ E-mail gerado automaticamente a partir do nome (`joao.silva@dominio.com.br`)
+- ✅ Domínio configurável com padrão `mobilemed.com.br`
+- ✅ Botão **Copiar Credenciais** no modal de usuários salvos
+- ✅ Botão **Copiar Mensagem** com texto completo de boas-vindas
+- ✅ Copiar credenciais individualmente por usuário gerado
 
 ### **v1.2** - 30/03/2026
 - ✅ **Adicionado seletor de tipo de profissional** (Médico / Veterinário)
