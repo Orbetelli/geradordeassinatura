@@ -797,6 +797,57 @@ input.pw-range::-webkit-slider-thumb {
     padding: 24px 0;
 }
 
+/* Botões de ação do modal */
+.pw-modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    flex-wrap: wrap;
+}
+
+.pw-modal-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Segoe UI', sans-serif;
+    transition: all 0.2s;
+    min-width: 140px;
+}
+
+.pw-modal-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.pw-btn-credenciais {
+    background: rgba(255, 255, 255, 0.9);
+    color: #5a3e9b;
+}
+
+.pw-btn-credenciais:hover {
+    background: white;
+}
+
+.pw-btn-mensagem {
+    background: rgba(102, 126, 234, 0.8);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.pw-btn-mensagem:hover {
+    background: rgba(102, 126, 234, 1);
+}
+
 /* ========================================
    RESPONSIVIDADE
    ======================================== */
@@ -818,4 +869,16 @@ input.pw-range::-webkit-slider-thumb {
         padding: 7px 11px;
         font-size: 12px;
     }
+}
+
+/* Card de resultado no modo implantação (email + senha juntos) */
+.pw-implantacao-item {
+    height: auto !important;
+    padding: 10px 14px !important;
+    align-items: flex-start !important;
+}
+
+.pw-implantacao-item button {
+    align-self: center;
+    flex-shrink: 0;
 }

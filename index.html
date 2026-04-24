@@ -264,18 +264,40 @@
 
             <!-- Campos de e-mail/nome (visíveis apenas no modo implantação) -->
             <div id="pwEmailSection" style="display: none; margin-bottom: 16px;">
+
+                <!-- Domínio configurável -->
                 <div class="form-group" style="margin-bottom: 12px;">
-                    <label style="font-size: 14px; margin-bottom: 6px;">E-mail base</label>
+                    <label style="font-size: 14px; margin-bottom: 6px;">Domínio do E-mail</label>
                     <div class="pw-input-row">
-                        <input type="text" id="pwEmailBase" placeholder="nome@mobilemed.com.br">
+                        <span style="color: rgba(255,255,255,0.6); font-size: 14px; white-space: nowrap;">@</span>
+                        <input type="text" id="pwDominio" value="mobilemed.com.br" placeholder="mobilemed.com.br" oninput="pwAtualizarPreview()">
+                        <button onclick="document.getElementById('pwDominio').value='mobilemed.com.br'; pwAtualizarPreview();" title="Restaurar padrão">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                                <path d="M3 3v5h5"/>
+                            </svg>
+                        </button>
                     </div>
                 </div>
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label style="font-size: 14px; margin-bottom: 6px;">Nome do usuário</label>
-                    <div class="pw-input-row">
-                        <input type="text" id="pwUserName" placeholder="Ex: João Silva">
+
+                <!-- Nomes em lote -->
+                <div class="form-group" style="margin-bottom: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <label style="font-size: 14px; margin-bottom: 0;">Nomes dos Usuários</label>
+                        <span id="pwNomeCount" style="font-size: 12px; opacity: 0.7; background: rgba(255,255,255,0.15); padding: 2px 10px; border-radius: 20px;">0 nomes</span>
+                    </div>
+                    <textarea
+                        id="pwNomes"
+                        placeholder="Digite um nome por linha:&#10;João Silva&#10;Maria Souza&#10;Carlos Lima"
+                        rows="5"
+                        oninput="pwAtualizarContador()"
+                        style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 10px; padding: 12px; font-size: 14px; width: 100%; resize: vertical; font-family: 'Segoe UI', sans-serif; outline: none;"
+                    ></textarea>
+                    <div style="font-size: 12px; opacity: 0.7; margin-top: 6px; font-style: italic;">
+                        💡 João Silva → joao.silva@<span id="pwDominioPreview">mobilemed.com.br</span>
                     </div>
                 </div>
+
             </div>
 
             <!-- Prefixo -->
@@ -351,6 +373,16 @@
         </div>
         <div class="pw-user-list" id="pwUserList">
             <div class="pw-empty">Nenhum usuário salvo ainda.</div>
+        </div>
+        <div class="pw-modal-actions" id="pwModalActions" style="display:none;">
+            <button class="pw-modal-btn pw-btn-credenciais" onclick="pwCopiarCredenciais()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                Copiar Credenciais
+            </button>
+            <button class="pw-modal-btn pw-btn-mensagem" onclick="pwCopiarMensagem()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                Copiar Mensagem
+            </button>
         </div>
     </div>
 </div>

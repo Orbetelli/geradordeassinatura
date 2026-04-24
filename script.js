@@ -655,6 +655,43 @@ function togglePwImplantacao(on) {
     document.getElementById('pwEmailSection').style.display = on ? 'block' : 'none';
 }
 
+// Atualiza o contador de nomes no textarea
+function pwAtualizarContador() {
+    const nomes = pwParsearNomes();
+    const el = document.getElementById('pwNomeCount');
+    if (el) el.textContent = `${nomes.length} nome${nomes.length !== 1 ? 's' : ''}`;
+}
+
+// Atualiza o preview do domínio na dica
+function pwAtualizarPreview() {
+    const dominio = document.getElementById('pwDominio').value || 'mobilemed.com.br';
+    const el = document.getElementById('pwDominioPreview');
+    if (el) el.textContent = dominio;
+}
+
+// Converte "João Silva" → "joao.silva"
+function pwNomeParaEmail(nome) {
+    return nome
+        .trim()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z\s]/g, '')
+        .trim()
+        .split(/\s+/)
+        .join('.');
+}
+
+// Retorna array de nomes válidos do textarea
+function pwParsearNomes() {
+    const textarea = document.getElementById('pwNomes');
+    if (!textarea) return [];
+    return textarea.value
+        .split('\n')
+        .map(n => n.trim())
+        .filter(n => n.length > 0);
+}
+
 function pwRand(arr) {
     return arr[Math.floor(Math.random() * arr.length)];
 }
@@ -689,21 +726,67 @@ function pwGerarSenha(len, useSpecial, upperOnly) {
 }
 
 function pwGerarSenhas() {
-    const prefix     = document.getElementById('pwPrefix').value || 'Mobile';
-    const qty        = +document.getElementById('pwQty').value;
-    const len        = +document.getElementById('pwLen').value;
-    const useSpecial = document.getElementById('pwSpecial').checked;
-    const upperOnly  = document.getElementById('pwUpper').checked;
+    const prefix      = document.getElementById('pwPrefix').value || 'Mobile';
+    const qty         = +document.getElementById('pwQty').value;
+    const len         = +document.getElementById('pwLen').value;
+    const useSpecial  = document.getElementById('pwSpecial').checked;
+    const upperOnly   = document.getElementById('pwUpper').checked;
     const implantacao = document.getElementById('pwImplantacao').checked;
 
     const list = document.getElementById('pwList');
     list.innerHTML = '';
-    const generated = [];
 
+    // ── MODO IMPLANTAÇÃO: gera 1 email+senha por nome digitado ──
+    if (implantacao) {
+        const nomes   = pwParsearNomes();
+        const dominio = document.getElementById('pwDominio').value.trim() || 'mobilemed.com.br';
+
+        if (nomes.length === 0) {
+            alert('⚠️ Digite pelo menos um nome no campo de usuários.');
+            return;
+        }
+
+        nomes.forEach(nome => {
+            const emailLocal = pwNomeParaEmail(nome);
+            const email      = `${emailLocal}@${dominio}`;
+            const senha      = `${prefix}@${pwGerarSenha(len, useSpecial, upperOnly)}`;
+
+            // Card de resultado: mostra email + senha juntos
+            const div = document.createElement('div');
+            div.className = 'pw-password-item pw-implantacao-item';
+            div.innerHTML = `
+                <div style="flex:1; min-width:0;">
+                    <div style="font-size:12px; opacity:0.7; margin-bottom:2px;">${nome}</div>
+                    <div style="font-size:13px; word-break:break-all;">${email}</div>
+                    <div style="font-family:'Courier New',monospace; font-size:14px; margin-top:2px;">${senha}</div>
+                </div>
+                <button onclick="pwCopiarItemCredencial(this)" title="Copiar credenciais" data-email="${email}" data-senha="${senha}">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="9" y="9" width="13" height="13" rx="2"/>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                    </svg>
+                </button>
+            `;
+            list.appendChild(div);
+
+            // Salva no array de usuários
+            pwSavedUsers.push({
+                name: nome,
+                email,
+                password: senha,
+                date: new Date().toLocaleDateString('pt-BR')
+            });
+        });
+
+        document.getElementById('savedCount').textContent = pwSavedUsers.length;
+        pwRenderUsers();
+        return;
+    }
+
+    // ── MODO NORMAL: gera N senhas sem email ──
     for (let i = 0; i < qty; i++) {
         const suffix = pwGerarSenha(len, useSpecial, upperOnly);
         const senha  = `${prefix}@${suffix}`;
-        generated.push(senha);
 
         const div = document.createElement('div');
         div.className = 'pw-password-item';
@@ -724,22 +807,17 @@ function pwGerarSenhas() {
         `;
         list.appendChild(div);
     }
+}
 
-    // Salva usuário se modo implantação ativo
-    if (implantacao) {
-        const email = document.getElementById('pwEmailBase').value;
-        const name  = document.getElementById('pwUserName').value || 'Usuário';
-        if (email) {
-            pwSavedUsers.push({
-                name,
-                email,
-                password: generated[0],
-                date: new Date().toLocaleDateString('pt-BR')
-            });
-            document.getElementById('savedCount').textContent = pwSavedUsers.length;
-            pwRenderUsers();
-        }
-    }
+// Copia email+senha de um item individual do modo implantação
+function pwCopiarItemCredencial(btn) {
+    const email = btn.dataset.email;
+    const senha = btn.dataset.senha;
+    navigator.clipboard.writeText(`Email: ${email} | Senha: ${senha}`).then(() => {
+        const orig = btn.innerHTML;
+        btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#38ef7d" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
+        setTimeout(() => { btn.innerHTML = orig; }, 1500);
+    });
 }
 
 function pwRegenOne(btn, prefix, len, useSpecial, upperOnly) {
@@ -763,11 +841,17 @@ function pwCopiar(btn) {
 }
 
 function pwRenderUsers() {
-    const list = document.getElementById('pwUserList');
+    const list    = document.getElementById('pwUserList');
+    const actions = document.getElementById('pwModalActions');
+
     if (!pwSavedUsers.length) {
         list.innerHTML = '<div class="pw-empty">Nenhum usuário salvo ainda.</div>';
+        actions.style.display = 'none';
         return;
     }
+
+    actions.style.display = 'flex';
+
     list.innerHTML = pwSavedUsers.map((u, i) => `
         <div class="pw-user-item">
             <div>
@@ -780,6 +864,50 @@ function pwRenderUsers() {
             </div>
         </div>
     `).join('');
+}
+
+// Copia todas as credenciais no formato:
+// Email: x | Senha: y
+function pwCopiarCredenciais() {
+    if (!pwSavedUsers.length) return;
+
+    const texto = pwSavedUsers.map(u =>
+        `Email: ${u.email} | Senha: ${u.password}`
+    ).join('\n');
+
+    navigator.clipboard.writeText(texto).then(() => {
+        pwFeedbackBtn('.pw-btn-credenciais', '✅ Copiado!');
+    });
+}
+
+// Copia a mensagem de boas-vindas completa para todos os usuários
+function pwCopiarMensagem() {
+    if (!pwSavedUsers.length) return;
+
+    const texto = pwSavedUsers.map(u =>
+`Seja bem-vindo(a) ao nosso sistema de Telerradiologia MobileMed!
+Seguem abaixo as informações necessárias para o seu primeiro acesso:
+
+Portal: laudos.mobilemed.com.br/login
+Login (e-mail): ${u.email}
+Senha Temporária: ${u.password}
+
+Atenciosamente,
+Equipe MobileMed`
+    ).join('\n\n---\n\n');
+
+    navigator.clipboard.writeText(texto).then(() => {
+        pwFeedbackBtn('.pw-btn-mensagem', '✅ Copiado!');
+    });
+}
+
+// Feedback visual temporário nos botões do modal
+function pwFeedbackBtn(selector, msg) {
+    const btn = document.querySelector(selector);
+    if (!btn) return;
+    const original = btn.innerHTML;
+    btn.textContent = msg;
+    setTimeout(() => { btn.innerHTML = original; }, 2000);
 }
 
 function pwRemoveUser(i) {
