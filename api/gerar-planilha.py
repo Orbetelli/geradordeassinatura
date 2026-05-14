@@ -145,8 +145,8 @@ def gerar_planilha(data):
         ("Telefone:",       "telefone"),
     ]
     for i, (label, chave) in enumerate(campos_cliente, 4):
-        sc(ws1, i, 2, label,              font=sf(True,  PRETO), align=al())
-        sc(ws1, i, 3, data.get(chave, ""), font=sf(False, PRETO), align=al())
+        sc(ws1, i, 2, label,               font=sf(True,  PRETO), align=al(), border=tb())
+        sc(ws1, i, 3, data.get(chave, ""), font=sf(False, PRETO), align=al(), border=tb())
 
     # ── ROUTER DA MOBILEMED (G3:H3) ──
     ws1.merge_cells("G3:H3")
@@ -165,8 +165,8 @@ def gerar_planilha(data):
         ("Observações:",                 "rmm_obs"),
     ]
     for i, (label, chave) in enumerate(campos_router_mm, 4):
-        sc(ws1, i, 7, label,              font=sf(True,  PRETO), align=al())
-        sc(ws1, i, 8, data.get(chave, ""), font=sf(False, PRETO), align=al())
+        sc(ws1, i, 7, label,               font=sf(True,  PRETO), align=al(), border=tb())
+        sc(ws1, i, 8, data.get(chave, ""), font=sf(False, PRETO), align=al(), border=tb())
 
     # ── INFORMAÇÕES DE SISTEMAS ADICIONAIS (B15:C15) ──
     ws1.merge_cells("B15:C15")
@@ -182,11 +182,10 @@ def gerar_planilha(data):
         (24, "Se sim, terá integração com nosso sistema?",                       "integpacs"),
     ]
     for row, label, chave in perguntas_sistemas:
-        # Merge B:C — label vai na top-left (B), resposta na linha seguinte (B+1)
         ws1.merge_cells(f"B{row}:C{row}")
-        sc(ws1, row,     2, label,               font=sf(True,  PRETO), align=al(wrap=True))
+        sc(ws1, row,     2, label,               font=sf(True,  PRETO), align=al(wrap=True), border=tb())
         ws1.merge_cells(f"B{row+1}:C{row+1}")
-        sc(ws1, row + 1, 2, data.get(chave, ""), font=sf(False, PRETO), align=al())
+        sc(ws1, row + 1, 2, data.get(chave, ""), font=sf(False, PRETO), align=al(),          border=tb())
 
     # ── INFORMAÇÕES DO TI (G15:H15) ──
     ws1.merge_cells("G15:H15")
@@ -201,8 +200,8 @@ def gerar_planilha(data):
         ("Observações:",         "ti_obs"),
     ]
     for i, (label, chave) in enumerate(campos_ti, 16):
-        sc(ws1, i, 7, label,              font=sf(True,  PRETO), align=al())
-        sc(ws1, i, 8, data.get(chave, ""), font=sf(False, PRETO), align=al())
+        sc(ws1, i, 7, label,               font=sf(True,  PRETO), align=al(), border=tb())
+        sc(ws1, i, 8, data.get(chave, ""), font=sf(False, PRETO), align=al(), border=tb())
 
     # ── ROUTER DA WORKLIST (G23:H23) ──
     ws1.merge_cells("G23:H23")
@@ -220,8 +219,8 @@ def gerar_planilha(data):
         ("Observações:",         "rwl_obs"),
     ]
     for i, (label, chave) in enumerate(campos_router_wl, 24):
-        sc(ws1, i, 7, label,              font=sf(True,  PRETO), align=al())
-        sc(ws1, i, 8, data.get(chave, ""), font=sf(False, PRETO), align=al())
+        sc(ws1, i, 7, label,               font=sf(True,  PRETO), align=al(), border=tb())
+        sc(ws1, i, 8, data.get(chave, ""), font=sf(False, PRETO), align=al(), border=tb())
 
     # ── ABA 2: Equipamentos ───────────────────────────────────────────────────
     ws2 = wb.create_sheet("Equipamentos")
