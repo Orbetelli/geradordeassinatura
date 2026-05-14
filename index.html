@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobilemed Tools v3.0</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Botão de alternância de tema -->
+<button class="tema-toggle" onclick="alternarTema()" id="temaBtn">
+    <span class="tema-icon">☀️</span>
+    <span id="temaLabel">Tema Claro</span>
+</button>
+
+<!-- ========================================
+     HEADER & ABAS PRINCIPAIS
+     ======================================== -->
+<div class="app-header">
+    <h1>🏥 Mobilemed Tools</h1>
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('geral', this)">⚙️ Geral</button>
+        <button class="tab-btn" onclick="switchTab('suporte', this)">🛠️ Suporte</button>
+        <button class="tab-btn" onclick="switchTab('query', this)">🚀 Implantação</button>
+    </div>
+</div>
+
+<!-- ========================================
+     ABA 1: GERAL
+     ======================================== -->
+<div id="tab-geral" class="tab-panel active">
+    <div class="container">
+        <h2>⚙️ Geral</h2>
+
+        <!-- Sub-abas internas -->
+        <div class="qb-tabs">
+            <button class="qb-tab active" onclick="geralSwitchTab('assinatura', this)">🩺 Gerador de Assinatura</button>
+            <button class="qb-tab" onclick="geralSwitchTab('senha', this)">🔐 Gerador de Senha</button>
+        </div>
+
+        <!-- ── SUB-ABA: GERADOR DE ASSINATURA ── -->
+        <div id="geral-panel-assinatura" class="qb-panel active">
+
+            <div class="info-box">
+                💡 <strong>Versão Simples:</strong> Remoção de fundo por detecção de cor! 🎨
+                <br><small>⚡ Rápido e sem dependências externas</small>
+            </div>
+
+            <!-- Upload da assinatura principal -->
+            <div class="upload-section">
+                <div class="file-input-wrapper">
+                    <label for="fileInput" class="file-input-label">📁 Selecionar Imagem da Assinatura</label>
+                    <input type="file" id="fileInput" accept="image/*">
+                </div>
+                <div id="fileName" style="text-align: center; margin-top: 10px;"></div>
+                <div id="imagePreviewContainer" style="display: none; text-align: center;">
+                    <img id="imagePreview" class="image-preview" alt="Preview da imagem">
+                </div>
+                <div style="text-align: center; margin-top: 15px;">
+                    <button class="btn btn-warning hidden" onclick="removeBackground()" id="removeBgBtn">
+                        🎨 Remover Fundo
+                    </button>
+                </div>
+
+                <!-- Barra de progresso -->
+                <div id="modelProgress" class="hidden" style="margin-top: 20px;">
+                    <div style="background: rgba(255,255,255,0.2); border-radius: 10px; padding: 15px;">
+                        <p style="margin: 0 0 10px 0; text-align: center;">
+                            <strong id="progressText">Processando...</strong>
+                        </p>
+                        <div style="background: rgba(0,0,0,0.2); border-radius: 5px; height: 20px; overflow: hidden;">
+                            <div id="progressBar" style="background: linear-gradient(90deg, #11998e, #38ef7d); height: 100%; width: 0%; transition: width 0.3s;"></div>
+                        </div>
+                        <p style="margin: 10px 0 0 0; text-align: center; font-size: 0.9em;">
+                            <span id="progressPercent">0%</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Painel de ajustes -->
+            <div class="adjustment-section hidden" id="adjustmentSection">
+                <h3 style="text-align: center; margin-bottom: 20px;">🎨 Ajustes da Assinatura</h3>
+
+                <div class="auto-filters-box">
+                    <h4 style="margin-bottom: 15px;">⚡ Filtros Automáticos</h4>
+
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="convertToBlack">
+                        <label for="convertToBlack" style="margin-bottom: 0;">🖤 Converter para preto puro</label>
+                    </div>
+                    <div class="helper-text" style="margin-bottom: 15px;">💡 Preenche com preto (RGB: 0,0,0)</div>
+
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="cleanWeakPixels">
+                        <label for="cleanWeakPixels" style="margin-bottom: 0;">🧹 Limpar pixels fracos</label>
+                    </div>
+                    <div class="helper-text" style="margin-bottom: 15px;">💡 Remove pixels quase transparentes (alpha &lt; 15)</div>
+
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="autoCrop">
+                        <label for="autoCrop" style="margin-bottom: 0;">✂️ Crop automático</label>
+                    </div>
+                    <div class="helper-text" style="margin-bottom: 15px;">💡 Remove bordas vazias, adiciona margem de 15px</div>
+
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="applyPythonFilters">
+                        <label for="applyPythonFilters" style="margin-bottom: 0;">🐍 Filtros padrão Python</label>
+                    </div>
+                    <div class="helper-text" style="margin-bottom: 15px;">💡 Contraste 2.0x + Nitidez automática (desativa controles manuais)</div>
+                </div>
+
+                <div class="manual-controls" id="manualControls">
+                    <h4 style="margin: 25px 0 15px 0;">🎚️ Controles Manuais</h4>
+
+                    <div class="form-group">
+                        <label for="contrast">Contraste: <span class="threshold-value" id="contrastValue">100%</span></label>
+                        <input type="range" id="contrast" min="50" max="600" value="200" step="5">
+                        <div class="helper-text">💡 Ajuste de 50% a 600% (padrão 200%)</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sharpness">Nitidez: <span class="threshold-value" id="sharpnessValue">0</span></label>
+                        <input type="range" id="sharpness" min="0" max="20" value="0" step="1">
+                        <div class="helper-text">💡 Deixa as bordas mais definidas (0-20)</div>
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin-top: 20px;">
+                    <button class="btn btn-secondary" onclick="resetAdjustments()">🔄 Restaurar Padrão</button>
+                    <button class="btn btn-info" onclick="applyFiltersPreview()">👁️ Visualizar Filtros</button>
+                </div>
+            </div>
+
+            <!-- Checkbox segunda assinatura -->
+            <div class="checkbox-group" style="margin-bottom: 25px;">
+                <input type="checkbox" id="enableSecondSignature">
+                <label for="enableSecondSignature" style="margin-bottom: 0;">
+                    📝 Adicionar segunda assinatura (lado a lado)
+                </label>
+            </div>
+
+            <!-- Dados do profissional 1 -->
+            <div id="doctor1Section">
+                <h3 style="margin-bottom: 15px;">👨‍⚕️ Assinatura Principal (Esquerda)</h3>
+
+                <div class="form-group">
+                    <label>Tipo de Profissional:</label>
+                    <div class="profession-selector" id="professionSelector1">
+                        <button type="button" class="profession-btn active" data-type="medico" data-register="CRM" onclick="selectProfession(1, this)">🩺 Médico</button>
+                        <button type="button" class="profession-btn" data-type="veterinario" data-register="CRMV" onclick="selectProfession(1, this)">🐾 Veterinário</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="doctorName">Nome do Profissional (com título):</label>
+                    <input type="text" id="doctorName" placeholder="Ex: Dr. João Silva">
+                </div>
+
+                <div class="form-group">
+                    <label for="doctorCRM" id="doctorCRMLabel">CRM com Estado:</label>
+                    <input type="text" id="doctorCRM" placeholder="Ex: CRM 12345/SP">
+                </div>
+            </div>
+
+            <!-- Dados do profissional 2 (oculto por padrão) -->
+            <div id="doctor2Section" class="hidden">
+                <h3 style="margin-bottom: 15px;">👨‍⚕️ Segunda Assinatura (Direita)</h3>
+
+                <div class="upload-section" style="margin-bottom: 20px;">
+                    <div class="file-input-wrapper">
+                        <label for="fileInput2" class="file-input-label">📁 Selecionar Segunda Assinatura</label>
+                        <input type="file" id="fileInput2" accept="image/*">
+                    </div>
+                    <div id="fileName2" style="text-align: center; margin-top: 10px;"></div>
+                    <div id="imagePreviewContainer2" style="display: none; text-align: center;">
+                        <img id="imagePreview2" class="image-preview" alt="Preview da segunda assinatura">
+                    </div>
+                    <div style="text-align: center; margin-top: 15px;">
+                        <button class="btn btn-warning hidden" onclick="removeBackground2()" id="removeBgBtn2">
+                            🎨 Remover Fundo (Assinatura 2)
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Tipo de Profissional:</label>
+                    <div class="profession-selector" id="professionSelector2">
+                        <button type="button" class="profession-btn active" data-type="medico" data-register="CRM" onclick="selectProfession(2, this)">🩺 Médico</button>
+                        <button type="button" class="profession-btn" data-type="veterinario" data-register="CRMV" onclick="selectProfession(2, this)">🐾 Veterinário</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="doctorName2">Nome do Profissional (com título):</label>
+                    <input type="text" id="doctorName2" placeholder="Ex: Dr. Maria Costa">
+                </div>
+
+                <div class="form-group">
+                    <label for="doctorCRM2" id="doctorCRM2Label">CRM com Estado:</label>
+                    <input type="text" id="doctorCRM2" placeholder="Ex: CRM 67890/SP">
+                </div>
+            </div>
+
+            <!-- Tamanho da assinatura -->
+            <div class="form-group">
+                <label>📐 Tamanho da Imagem da Assinatura: <span class="threshold-value" id="sigSizeVal">100%</span></label>
+                <input type="range" id="sigSize" min="20" max="200" value="100" step="5"
+                    oninput="document.getElementById('sigSizeVal').textContent=this.value+'%'; sigRegenIfReady();">
+                <div class="helper-text">💡 Ajusta o tamanho da imagem dentro da assinatura (20% a 200%)</div>
+            </div>
+
+            <!-- Seletor de fonte -->
+            <div class="form-group">
+                <label for="fontSelector">🔤 Fonte da Assinatura:</label>
+                <select id="fontSelector">
+                    <option value="Arial">Arial (padrão)</option>
+                    <option value="Times New Roman">Times New Roman</option>
+                    <option value="Courier New">Courier New</option>
+                </select>
+            </div>
+
+            <!-- Frases extras -->
+            <div class="checkbox-group">
+                <input type="checkbox" id="addExtraPhrase">
+                <label for="addExtraPhrase" style="margin-bottom: 0;">Adicionar frases extras</label>
+            </div>
+            <div class="form-group hidden" id="extraPhraseGroup">
+                <label for="extraPhrase">Frase adicional 1:</label>
+                <textarea id="extraPhrase" placeholder="Digite a primeira frase extra" rows="2"></textarea>
+            </div>
+            <div class="form-group hidden" id="extraPhrase2Group">
+                <label for="extraPhrase2">Frase adicional 2:</label>
+                <textarea id="extraPhrase2" placeholder="Segunda frase (opcional)" rows="2"></textarea>
+            </div>
+
+            <!-- Loading -->
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p style="margin-top: 15px;" id="loadingText">Processando...</p>
+            </div>
+
+            <div id="messageContainer"></div>
+
+            <!-- Botões -->
+            <div class="buttons-container">
+                <button class="btn btn-primary" onclick="generateSignature()" id="generateBtn">✨ Gerar Assinatura</button>
+                <button class="btn btn-success hidden" onclick="downloadImage()" id="downloadBtn">💾 Baixar Assinatura</button>
+            </div>
+
+            <!-- Canvas de preview -->
+            <div class="preview-section">
+                <canvas id="previewCanvas" width="600" height="120"></canvas>
+            </div>
+
+        </div><!-- fim geral-panel-assinatura -->
+
+        <!-- ── SUB-ABA: GERADOR DE SENHA ── -->
+        <div id="geral-panel-senha" class="qb-panel">
+
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 16px;">
+                <button class="btn btn-secondary" style="margin: 0; padding: 10px 20px; font-size: 14px;"
+                    onclick="document.getElementById('pwModal').classList.add('open')">
+                    🔑 Senhas Salvas (<span id="savedCountGeral">0</span>)
+                </button>
+            </div>
+
+            <div class="pw-card">
+                <h3>⚙️ Configurações</h3>
+                <p class="subtitle">Gere senhas rápidas para uso individual.</p>
+
+                <!-- Nome do Usuário -->
+                <div class="form-group">
+                    <label style="font-size: 14px; margin-bottom: 6px;">Nome do Usuário <span style="opacity:0.5;font-weight:400;">(opcional)</span></label>
+                    <div class="pw-input-row">
+                        <input type="text" id="pwGeralNome" placeholder="Ex: João Silva" style="background: transparent; color: white;">
+                    </div>
+                </div>
+
+                <!-- E-mail -->
+                <div class="form-group">
+                    <label style="font-size: 14px; margin-bottom: 6px;">E-mail <span style="opacity:0.5;font-weight:400;">(opcional)</span></label>
+                    <div class="pw-input-row">
+                        <input type="text" id="pwGeralEmail" placeholder="Ex: joao.silva@empresa.com.br" style="background: transparent; color: white;">
+                    </div>
+                </div>
+
+                <!-- Prefixo -->
+                <div class="form-group">
+                    <label style="font-size: 14px; margin-bottom: 6px;">Prefixo da Senha</label>
+                    <div class="pw-input-row">
+                        <input type="text" id="pwPrefix" value="Mobile" maxlength="20">
+                        <button onclick="document.getElementById('pwPrefix').value='Mobile'" title="Restaurar padrão">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                                <path d="M3 3v5h5"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quantidade -->
+                <div class="form-group">
+                    <div class="pw-slider-row">
+                        <label style="font-size: 14px; margin-bottom: 0;">Quantidade de Senhas</label>
+                        <span class="pw-slider-val" id="pwQtyVal">1</span>
+                    </div>
+                    <input type="range" class="pw-range" id="pwQty" min="1" max="10" value="1"
+                        oninput="document.getElementById('pwQtyVal').textContent = this.value">
+                </div>
+
+                <!-- Comprimento -->
+                <div class="form-group">
+                    <div class="pw-slider-row">
+                        <label style="font-size: 14px; margin-bottom: 0;">Comprimento (depois do @)</label>
+                        <span class="pw-slider-val" id="pwLenVal">6</span>
+                    </div>
+                    <input type="range" class="pw-range" id="pwLen" min="6" max="16" value="6"
+                        oninput="document.getElementById('pwLenVal').textContent = this.value">
+                </div>
+
+                <!-- Toggles -->
+                <div class="pw-simple-row">
+                    <span class="slabel">Incluir Caracteres Especiais</span>
+                    <label class="pw-switch">
+                        <input type="checkbox" id="pwSpecial" checked>
+                        <span class="pw-slider-sw"></span>
+                    </label>
+                </div>
+
+                <div class="pw-simple-row">
+                    <span class="slabel">Apenas Letras Maiúsculas</span>
+                    <label class="pw-switch">
+                        <input type="checkbox" id="pwUpper">
+                        <span class="pw-slider-sw"></span>
+                    </label>
+                </div>
+
+                <button class="pw-gen-btn" onclick="pwGerarSenhas()">🔑 Gerar Novas Senhas</button>
+            </div>
+
+            <!-- Resultados -->
+            <div id="pwResults">
+                <div class="pw-results-label">Suas senhas geradas</div>
+                <div id="pwList"></div>
+            </div>
+
+        </div><!-- fim geral-panel-senha -->
+
+    </div>
+</div>
+
+<!-- ========================================
+     MODAL: USUÁRIOS SALVOS (IMPLANTAÇÃO)
+     ======================================== -->
+<div class="pw-modal-overlay" id="pwModal" onclick="if(event.target===this) this.classList.remove('open')">
+    <div class="pw-modal">
+        <div class="pw-modal-header">
+            <h3>👥 Usuários Salvos</h3>
+            <button onclick="document.getElementById('pwModal').classList.remove('open')">×</button>
+        </div>
+        <div class="pw-user-list" id="pwUserList">
+            <div class="pw-empty">Nenhum usuário salvo ainda.</div>
+        </div>
+        <div class="pw-modal-actions" id="pwModalActions" style="display:none;">
+            <button class="pw-modal-btn pw-btn-credenciais" onclick="pwCopiarCredenciais()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                Copiar Credenciais
+            </button>
+            <button class="pw-modal-btn pw-btn-mensagem" onclick="pwCopiarMensagem()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                Copiar Mensagem
+            </button>
+            <button class="pw-modal-btn pw-btn-exportcsv" onclick="pwExportarCSV()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Exportar CSV
+            </button>
+            <button class="pw-modal-btn pw-btn-exportxlsx" onclick="pwExportarExcel()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Exportar Excel
+            </button>
+        </div>
+
+        <!-- Mensagem personalizada -->
+        <div class="pw-modal-msg-section">
+            <button class="pw-modal-msg-toggle" onclick="pwToggleMensagemEditor()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                Personalizar Mensagem
+                <span id="pwMsgToggleIcon" style="margin-left: auto;">▼</span>
+            </button>
+            <div id="pwMensagemEditor" style="display:none; margin-top: 10px;">
+                <div style="display:flex; gap:8px; margin-bottom:8px;">
+                    <button class="pw-modal-btn pw-btn-mensagem" style="flex:1; font-size:11px;" onclick="pwCarregarMensagemPadrao()">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                        Carregar mensagem padrão
+                    </button>
+                    <button class="pw-modal-btn pw-btn-credenciais" style="flex:1; font-size:11px;" onclick="pwLimparMensagem()">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                        Limpar
+                    </button>
+                </div>
+                <textarea
+                    id="pwMensagemCustom"
+                    rows="7"
+                    placeholder="Digite sua mensagem personalizada aqui...&#10;&#10;Use {email} e {senha} para inserir os dados do usuário automaticamente."
+                    style="width:100%; background:rgba(255,255,255,0.1); color:white; border:1px solid rgba(255,255,255,0.3); border-radius:8px; padding:10px; font-size:12px; font-family:'Segoe UI',sans-serif; resize:vertical; outline:none; line-height:1.5;"
+                ></textarea>
+                <div style="font-size:11px; opacity:0.6; margin-top:6px; font-style:italic;">
+                    💡 Use <strong>{email}</strong> e <strong>{senha}</strong> na mensagem — serão substituídos pelos dados de cada usuário ao copiar.
+                </div>
+                <button class="pw-modal-btn pw-btn-exportcsv" style="width:100%; margin-top:10px;" onclick="pwCopiarMensagemCustom()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    Copiar Mensagem Personalizada
+                </button>
+            </div>
+        </div>
+
+        <!-- Mensagem personalizável (segundo editor - legado) -->
+        <div class="pw-modal-msg-section" id="pwMsgSection" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <span style="font-size:13px; font-weight:600;">✉️ Mensagem personalizada</span>
+                <div style="display:flex; gap:6px;">
+                    <button class="pw-msg-action-btn" onclick="pwCarregarMensagemPadrao()" title="Carregar mensagem padrão">📋 Padrão</button>
+                    <button class="pw-msg-action-btn" onclick="document.getElementById('pwMsgEditor').value=''" title="Limpar">🗑️ Limpar</button>
+                </div>
+            </div>
+            <textarea
+                id="pwMsgEditor"
+                rows="7"
+                placeholder="Digite sua mensagem personalizada aqui...&#10;&#10;Use {email} e {senha} para inserir os dados automaticamente."
+                style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 10px; padding: 12px; font-size: 13px; width: 100%; resize: vertical; font-family: 'Segoe UI', sans-serif; outline: none; line-height: 1.5;"
+            ></textarea>
+            <div style="font-size:11px; opacity:0.6; margin-top:6px;">
+                💡 Use <strong>{nome}</strong>, <strong>{email}</strong> e <strong>{senha}</strong> — serão substituídos pelos dados de cada usuário.
+            </div>
+        </div>
+
+        <!-- Importar usuários -->
+        <div class="pw-modal-import">
+            <label for="pwImportFile" class="pw-btn-import">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                Importar CSV / Excel
+            </label>
+            <input type="file" id="pwImportFile" accept=".csv,.xlsx,.xls" style="display:none;" onchange="pwImportarArquivo(this)">
+            <span id="pwImportInfo" style="font-size:12px; opacity:0.7;"></span>
+        </div>
+        <div style="font-size:11px; opacity:0.5; margin-top:6px; font-style:italic; padding: 0 2px;">
+            💡 CSV esperado: colunas <strong>Nome</strong> e <strong>Email</strong> — senha gerada automaticamente.
+        </div>
+    </div>
+</div>
+
+<!-- ========================================
+     ABA 2: SUPORTE
+     ======================================== -->
+<div id="tab-suporte" class="tab-panel">
+    <div class="container">
+        <h2>🛠️ Suporte</h2>
+
+        <!-- Sub-abas internas -->
+        <div class="qb-tabs">
+            <button class="qb-tab active" onclick="suporteSwitchTab('comandos', this)">💻 Comandos</button>
+            <button class="qb-tab" onclick="suporteSwitchTab('storage', this)">🗂️ Storage</button>
+        </div>
+
+        <!-- ── SUB-ABA: COMANDOS ── -->
+        <div id="suporte-panel-comandos" class="qb-panel active">
+
+            <!-- Seletor OS + Busca -->
+            <div class="cmd-top-bar">
+                <div class="cmd-os-selector">
+                    <button class="cmd-os-btn active" onclick="cmdSwitchOS('windows', this)">🪟 Windows</button>
+                    <button class="cmd-os-btn" onclick="cmdSwitchOS('linux', this)">🐧 Linux / Mac</button>
+                </div>
+                <div class="cmd-search-box">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" id="cmdSearch" placeholder="Buscar comando..." oninput="cmdFiltrar(this.value)" autocomplete="off">
+                    <button id="cmdSearchClear" onclick="cmdLimparBusca()" style="display:none;">✕</button>
+                </div>
+            </div>
+
+            <!-- Resultados da busca -->
+            <div id="cmdSearchResults" style="display:none;"></div>
+
+            <!-- ── WINDOWS ── -->
+            <div id="cmd-os-windows" class="cmd-os-panel active">
+                <div id="cmd-windows-list"></div>
+            </div>
+
+            <!-- ── LINUX / MAC ── -->
+            <div id="cmd-os-linux" class="cmd-os-panel">
+                <div id="cmd-linux-list"></div>
+            </div>
+
+        </div><!-- fim suporte-panel-comandos -->
+
+        <!-- ── SUB-ABA: STORAGE ── -->
+        <div id="suporte-panel-storage" class="qb-panel">
+
+            <!-- Barra de pesquisa -->
+            <div class="storage-search-wrap">
+                <div class="storage-search-box">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" id="storageSearch" placeholder="Buscar grupo..." oninput="storageFiltrar(this.value)" autocomplete="off">
+                    <button id="storageSearchClear" onclick="storageLimparBusca()" style="display:none;">✕</button>
+                </div>
+                <span id="storageCount" class="storage-count">10 grupos</span>
+            </div>
+
+            <!-- Lista de cards -->
+            <div id="storageList"></div>
+
+        </div>
+
+    </div>
+</div>
+
+<!-- ========================================
+     ABA 3: IMPLANTAÇÃO
+     ======================================== -->
+<div id="tab-query" class="tab-panel">
+    <div class="container">
+        <h2>🚀 Implantação</h2>
+
+        <!-- Sub-abas principais de Implantação -->
+        <div class="qb-tabs">
+            <button class="qb-tab active" onclick="implantacaoSwitchTab('querybuilder', this)">🗄️ Query Builder</button>
+            <button class="qb-tab" onclick="implantacaoSwitchTab('geradorimp', this)">🔐 Gerador de Implantação</button>
+            <button class="qb-tab" onclick="implantacaoSwitchTab('planilha', this)">📋 Planilha de Implantação</button>
+        </div>
+
+        <!-- ── SUB-ABA: QUERY BUILDER ── -->
+        <div id="implantacao-panel-querybuilder" class="qb-panel active">
+
+        <!-- Sub-abas internas do Query Builder -->
+        <div class="qb-tabs" style="margin-top: 4px;">
+            <button class="qb-tab active" onclick="qbSwitchTab('builder', this)">🔧 Builder</button>
+            <button class="qb-tab" onclick="qbSwitchTab('salvas', this)">💾 Salvas (<span id="qbSalvasCount">0</span>)</button>
+            <button class="qb-tab" onclick="qbSwitchTab('historico', this)">🕐 Histórico</button>
+            <button class="qb-tab" onclick="qbSwitchTab('conexao', this)">🔌 Conexão</button>
+        </div>
+
+        <!-- ── BUILDER ── -->
+        <div id="qb-panel-builder" class="qb-panel active">
+            <div class="qb-block">
+                <div class="qb-block-label">BANCO DE DADOS</div>
+                <div class="qb-db-chips" id="qbDbChips"></div>
+            </div>
+            <div class="qb-block">
+                <div class="qb-block-label">VIEW / TABELA</div>
+                <div class="qb-view-chips" id="qbViewChips"></div>
+            </div>
+            <div class="qb-block">
+                <div class="qb-block-label">CAMPOS <span class="qb-block-hint">— clique para adicionar ao SELECT</span></div>
+                <div class="qb-chips" id="qbFieldChips"></div>
+            </div>
+            <div class="qb-block">
+                <div class="qb-block-label">FILTROS WHERE <span class="qb-block-hint">— clique para adicionar condição</span></div>
+                <div class="qb-chips" id="qbWhereChips"></div>
+                <div id="qbActiveFilters"></div>
+                <div style="margin-top: 10px;">
+                    <button class="qb-today-btn" onclick="qbAddTodayFilter()">
+                        📅 Filtrar por hoje (STUDY_DATE = hoje)
+                    </button>
+                </div>
+            </div>
+            <div class="qb-block">
+                <div class="qb-block-label">QUERY GERADA</div>
+                <textarea id="qbPreview" class="qb-code qb-code-editable" spellcheck="false" placeholder="-- Selecione uma view e ao menos um campo para gerar a query"></textarea>
+                <div class="qb-preview-actions">
+                    <button class="qb-action-btn" onclick="qbCopiarQuery()">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                        Copiar
+                    </button>
+                    <button class="qb-action-btn qb-action-save" onclick="qbSalvarQuery()">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                        Salvar
+                    </button>
+                    <button class="qb-action-btn qb-action-danger" onclick="qbReset()">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+                        Limpar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── QUERIES SALVAS ── -->
+        <div id="qb-panel-salvas" class="qb-panel">
+            <div class="qb-search-row">
+                <input type="text" id="qbSalvasSearch" placeholder="🔍 Buscar..." oninput="qbFiltrarSalvas()">
+                <button class="qb-action-btn qb-action-danger" onclick="qbLimparTodasSalvas()" id="qbBtnLimparSalvas" style="display:none;">🗑️ Limpar</button>
+            </div>
+            <div id="qbSalvasList"></div>
+        </div>
+
+        <!-- ── CONEXÃO ── -->
+        <div id="qb-panel-conexao" class="qb-panel">
+            <div class="qb-block">
+                <div class="qb-block-label">BANCO DE DADOS <span class="qb-block-hint">— selecione para ver o formato da string</span></div>
+                <div class="qb-db-chips" id="qbConnDbChips"></div>
+            </div>
+            <div id="qbConnForm" class="qb-conn-form" style="display:none;">
+                <div class="qb-conn-grid">
+                    <div class="qb-conn-field">
+                        <label class="qb-conn-label">Host / IP</label>
+                        <input type="text" id="qbConnHost" class="qb-conn-input" placeholder="Ex: 192.168.1.100 ou servidor.empresa.com" oninput="qbGerarConexao()">
+                    </div>
+                    <div class="qb-conn-field qb-conn-field-sm">
+                        <label class="qb-conn-label">Porta</label>
+                        <input type="text" id="qbConnPort" class="qb-conn-input" placeholder="" oninput="qbGerarConexao()">
+                    </div>
+                    <div class="qb-conn-field">
+                        <label class="qb-conn-label">Database / Schema</label>
+                        <input type="text" id="qbConnDb" class="qb-conn-input" placeholder="Ex: mobilemed_pacs" oninput="qbGerarConexao()">
+                    </div>
+                    <div class="qb-conn-field">
+                        <label class="qb-conn-label">Usuário</label>
+                        <input type="text" id="qbConnUser" class="qb-conn-input" placeholder="Ex: admin" oninput="qbGerarConexao()">
+                    </div>
+                    <div class="qb-conn-field">
+                        <label class="qb-conn-label">Senha</label>
+                        <div class="qb-conn-pw-wrap">
+                            <input type="password" id="qbConnPass" class="qb-conn-input" placeholder="••••••••" oninput="qbGerarConexao()">
+                            <button class="qb-conn-eye" onclick="qbToggleConnPass()" title="Mostrar/ocultar senha">
+                                <svg id="qbConnEyeIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="qb-conn-field qb-conn-field-sm" id="qbConnInstanceWrap" style="display:none;">
+                        <label class="qb-conn-label">Instância <span style="opacity:0.5;font-weight:400;">(SQL Server)</span></label>
+                        <input type="text" id="qbConnInstance" class="qb-conn-input" placeholder="Ex: SQLEXPRESS" oninput="qbGerarConexao()">
+                    </div>
+                </div>
+                <div class="qb-block" style="margin-top: 20px;">
+                    <div class="qb-block-label">STRING DE CONEXÃO GERADA</div>
+                    <textarea id="qbConnString" class="qb-code qb-code-editable" spellcheck="false" style="min-height: 90px;" placeholder="— preencha os campos acima —"></textarea>
+                    <div class="qb-preview-actions" style="margin-top: 10px;">
+                        <button class="qb-action-btn" onclick="qbCopiarConexao()">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                            Copiar
+                        </button>
+                        <button class="qb-action-btn qb-action-danger" onclick="qbLimparConexao()">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+                            Limpar
+                        </button>
+                    </div>
+                </div>
+                <div class="qb-conn-ref" id="qbConnRef"></div>
+            </div>
+            <div id="qbConnPlaceholder" class="qb-empty" style="padding: 32px 0;">
+                Selecione um banco acima para ver os campos de conexão.
+            </div>
+        </div>
+
+        <!-- ── HISTÓRICO ── -->
+        <div id="qb-panel-historico" class="qb-panel">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <span style="font-size:13px; opacity:0.8;">Últimas queries copiadas</span>
+                <button class="qb-action-btn qb-action-danger" onclick="qbLimparHistorico()">🗑️ Limpar</button>
+            </div>
+            <div id="qbHistoricoList"></div>
+        </div>
+
+        </div><!-- fim implantacao-panel-querybuilder -->
+
+        <!-- ── SUB-ABA: GERADOR DE IMPLANTAÇÃO ── -->
+        <div id="implantacao-panel-geradorimp" class="qb-panel">
+
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 16px;">
+                <button class="btn btn-secondary" style="margin: 0; padding: 10px 20px; font-size: 14px;"
+                    onclick="document.getElementById('pwModal').classList.add('open')">
+                    👥 Usuários Salvos (<span id="savedCount">0</span>)
+                </button>
+            </div>
+
+            <div class="pw-card">
+                <h3>⚙️ Configurações</h3>
+                <p class="subtitle">Gere e-mail e senha para novos usuários em lote.</p>
+
+                <!-- Toggle E-mail Manual -->
+                <div class="pw-toggle-row">
+                    <div>
+                        <div class="tlabel">E-mail Manual</div>
+                        <div class="tdesc">Digitar nome e e-mail completo individualmente.</div>
+                    </div>
+                    <label class="pw-switch">
+                        <input type="checkbox" id="pwEmailManual" onchange="toggleEmailManual(this.checked)">
+                        <span class="pw-slider-sw"></span>
+                    </label>
+                </div>
+
+                <!-- MODO AUTOMÁTICO: domínio + nomes em lote -->
+                <div id="pwModoAuto">
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label style="font-size: 14px; margin-bottom: 6px;">Domínio do E-mail</label>
+                        <div class="pw-input-row">
+                            <span style="color: rgba(255,255,255,0.6); font-size: 14px; white-space: nowrap;">@</span>
+                            <input type="text" id="pwDominio" value="mobilemed.com.br" placeholder="mobilemed.com.br" oninput="pwAtualizarPreview()">
+                            <button onclick="document.getElementById('pwDominio').value='mobilemed.com.br'; pwAtualizarPreview();" title="Restaurar padrão">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                                    <path d="M3 3v5h5"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <label style="font-size: 14px; margin-bottom: 0;">Nomes dos Usuários</label>
+                            <span id="pwNomeCount" style="font-size: 12px; opacity: 0.7; background: rgba(255,255,255,0.15); padding: 2px 10px; border-radius: 20px;">0 nomes</span>
+                        </div>
+                        <textarea
+                            id="pwNomes"
+                            placeholder="Digite um nome por linha:&#10;João Silva&#10;Maria Souza&#10;Carlos Lima"
+                            rows="5"
+                            oninput="pwAtualizarContador()"
+                            style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 10px; padding: 12px; font-size: 14px; width: 100%; resize: vertical; font-family: 'Segoe UI', sans-serif; outline: none;"
+                        ></textarea>
+                        <div style="font-size: 12px; opacity: 0.7; margin-top: 6px; font-style: italic;">
+                            💡 João Silva → joao.silva@<span id="pwDominioPreview">mobilemed.com.br</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODO MANUAL -->
+                <div id="pwModoManual" style="display: none;">
+                    <div style="font-size: 13px; opacity: 0.8; margin-bottom: 12px; font-style: italic;">
+                        💡 Preencha nome e e-mail completo do usuário manualmente.
+                    </div>
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label style="font-size: 14px; margin-bottom: 6px;">Nome do Usuário</label>
+                        <div class="pw-input-row">
+                            <input type="text" id="pwNomeManual" placeholder="Ex: João Silva" style="background: transparent; color: white;">
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label style="font-size: 14px; margin-bottom: 6px;">E-mail Completo</label>
+                        <div class="pw-input-row">
+                            <input type="text" id="pwEmailManualInput" placeholder="Ex: joao.silva@empresa.com.br" style="background: transparent; color: white;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Prefixo -->
+                <div class="form-group">
+                    <label style="font-size: 14px; margin-bottom: 6px;">Prefixo da Senha</label>
+                    <div class="pw-input-row">
+                        <input type="text" id="pwPrefixImp" value="Mobile" maxlength="20">
+                        <button onclick="document.getElementById('pwPrefixImp').value='Mobile'" title="Restaurar padrão">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                                <path d="M3 3v5h5"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Comprimento -->
+                <div class="form-group">
+                    <div class="pw-slider-row">
+                        <label style="font-size: 14px; margin-bottom: 0;">Comprimento (depois do @)</label>
+                        <span class="pw-slider-val" id="pwLenImpVal">6</span>
+                    </div>
+                    <input type="range" class="pw-range" id="pwLenImp" min="6" max="16" value="6"
+                        oninput="document.getElementById('pwLenImpVal').textContent = this.value">
+                </div>
+
+                <!-- Toggles -->
+                <div class="pw-simple-row">
+                    <span class="slabel">Incluir Caracteres Especiais</span>
+                    <label class="pw-switch">
+                        <input type="checkbox" id="pwSpecialImp" checked>
+                        <span class="pw-slider-sw"></span>
+                    </label>
+                </div>
+
+                <div class="pw-simple-row">
+                    <span class="slabel">Apenas Letras Maiúsculas</span>
+                    <label class="pw-switch">
+                        <input type="checkbox" id="pwUpperImp">
+                        <span class="pw-slider-sw"></span>
+                    </label>
+                </div>
+
+                <button class="pw-gen-btn" onclick="pwGerarImplantacao()">🔑 Gerar Credenciais</button>
+            </div>
+
+            <!-- Resultados -->
+            <div id="pwResultsImp">
+                <div class="pw-results-label">Credenciais geradas</div>
+                <div id="pwListImp"></div>
+            </div>
+
+        </div><!-- fim implantacao-panel-geradorimp -->
+
+        <!-- ── SUB-ABA: PLANILHA DE IMPLANTAÇÃO ── -->
+        <div id="implantacao-panel-planilha" class="qb-panel">
+
+            <!-- Nav interna das seções -->
+            <div class="plan-nav">
+                <button class="plan-nav-btn active" onclick="planSwitchSection('cliente', this)">🏢 Cliente</button>
+                <button class="plan-nav-btn" onclick="planSwitchSection('equipamentos', this)">🖥️ Equipamentos</button>
+                <button class="plan-nav-btn" onclick="planSwitchSection('servidores', this)">🗄️ Servidores</button>
+                <button class="plan-nav-btn" onclick="planSwitchSection('usuarios', this)">👥 Usuários</button>
+                <button class="plan-nav-btn" onclick="planSwitchSection('anotacoes', this)">📝 Anotações</button>
+            </div>
+
+            <!-- ── SEÇÃO: CLIENTE ── -->
+            <div id="plan-section-cliente" class="plan-section active">
+
+                <div class="plan-two-col">
+
+                    <!-- Coluna esquerda -->
+                    <div>
+                        <div class="plan-block-title">📋 Dados Cadastrais</div>
+                        <div class="plan-field"><label>Nome Fantasia</label><input type="text" id="p_nomefantasia" placeholder="Nome fantasia da empresa"></div>
+                        <div class="plan-field"><label>Razão Social</label><input type="text" id="p_razaosocial" placeholder="Razão social completa"></div>
+                        <div class="plan-field"><label>CNPJ</label><input type="text" id="p_cnpj" placeholder="00.000.000/0000-00"></div>
+                        <div class="plan-field"><label>E-mail</label><input type="text" id="p_email" placeholder="contato@empresa.com.br"></div>
+                        <div class="plan-field"><label>Endereço</label><input type="text" id="p_endereco" placeholder="Rua, número"></div>
+                        <div class="plan-field"><label>Bairro</label><input type="text" id="p_bairro" placeholder="Bairro"></div>
+                        <div class="plan-field"><label>Cidade</label><input type="text" id="p_cidade" placeholder="Cidade / UF"></div>
+                        <div class="plan-field"><label>CEP</label><input type="text" id="p_cep" placeholder="00000-000"></div>
+                        <div class="plan-field"><label>Telefone</label><input type="text" id="p_telefone" placeholder="(00) 00000-0000"></div>
+
+                        <div class="plan-block-title" style="margin-top:20px;">🔗 Sistemas Adicionais</div>
+                        <div class="plan-field"><label>Utiliza RIS e HIS? Qual?</label><input type="text" id="p_rishis" placeholder="Sim / Não — qual?"></div>
+                        <div class="plan-field"><label>Integração com nosso sistema?</label><input type="text" id="p_integ1" placeholder="Sim / Não"></div>
+                        <div class="plan-field"><label>Consultórios acessam imagens externamente?</label><input type="text" id="p_consultorios" placeholder="Sim / Não — quantos?"></div>
+                        <div class="plan-field"><label>Utiliza PACS atualmente? Qual?</label><input type="text" id="p_pacs" placeholder="Sim / Não — qual?"></div>
+                        <div class="plan-field"><label>Integração do PACS com nosso sistema?</label><input type="text" id="p_integpacs" placeholder="Sim / Não"></div>
+                    </div>
+
+                    <!-- Coluna direita -->
+                    <div>
+                        <div class="plan-block-title">🔌 Router da Mobilemed</div>
+                        <div class="plan-field"><label>IP</label><input type="text" id="p_rmm_ip" placeholder="192.168.x.x"></div>
+                        <div class="plan-field"><label>Porta</label><input type="text" id="p_rmm_porta" placeholder="Ex: 104"></div>
+                        <div class="plan-field"><label>E-Title</label><input type="text" id="p_rmm_etitle" placeholder="AE Title"></div>
+                        <div class="plan-field"><label>AnyDesk / TeamViewer</label><input type="text" id="p_rmm_anydesk" placeholder="ID de acesso remoto"></div>
+                        <div class="plan-field"><label>Senha Acesso Remoto</label><input type="text" id="p_rmm_senha" placeholder="Senha"></div>
+                        <div class="plan-field"><label>Login do Windows</label><input type="text" id="p_rmm_login" placeholder="Usuário Windows"></div>
+                        <div class="plan-field"><label>Senha do Usuário Windows</label><input type="text" id="p_rmm_senhawin" placeholder="Senha"></div>
+                        <div class="plan-field"><label>Localização Física do Router</label><input type="text" id="p_rmm_local" placeholder="Ex: Sala de TI, rack 2"></div>
+                        <div class="plan-field"><label>Observações</label><input type="text" id="p_rmm_obs" placeholder="Observações"></div>
+
+                        <div class="plan-block-title" style="margin-top:20px;">💻 Informações do TI</div>
+                        <div class="plan-field"><label>Responsável do T.I</label><input type="text" id="p_ti_resp" placeholder="Nome do responsável"></div>
+                        <div class="plan-field"><label>Fone TI</label><input type="text" id="p_ti_fone" placeholder="(00) 00000-0000"></div>
+                        <div class="plan-field"><label>E-mail do TI</label><input type="text" id="p_ti_email" placeholder="ti@empresa.com.br"></div>
+                        <div class="plan-field"><label>TI Local ou Terceirizado</label><input type="text" id="p_ti_tipo" placeholder="Local / Terceirizado"></div>
+                        <div class="plan-field"><label>Observações TI</label><input type="text" id="p_ti_obs" placeholder="Observações"></div>
+
+                        <div class="plan-block-title" style="margin-top:20px;">🔌 Router da Worklist</div>
+                        <div class="plan-field"><label>IP</label><input type="text" id="p_rwl_ip" placeholder="192.168.x.x"></div>
+                        <div class="plan-field"><label>Porta</label><input type="text" id="p_rwl_porta" placeholder="Ex: 104"></div>
+                        <div class="plan-field"><label>E-Title</label><input type="text" id="p_rwl_etitle" placeholder="AE Title"></div>
+                        <div class="plan-field"><label>AnyDesk / TeamViewer</label><input type="text" id="p_rwl_anydesk" placeholder="ID de acesso remoto"></div>
+                        <div class="plan-field"><label>Senha Acesso Remoto</label><input type="text" id="p_rwl_senha" placeholder="Senha"></div>
+                        <div class="plan-field"><label>Login do Windows</label><input type="text" id="p_rwl_login" placeholder="Usuário Windows"></div>
+                        <div class="plan-field"><label>Senha do Usuário Windows</label><input type="text" id="p_rwl_senhawin" placeholder="Senha"></div>
+                        <div class="plan-field"><label>Observações</label><input type="text" id="p_rwl_obs" placeholder="Observações"></div>
+                    </div>
+
+                </div>
+            </div><!-- fim plan-section-cliente -->
+
+            <!-- ── SEÇÃO: EQUIPAMENTOS ── -->
+            <div id="plan-section-equipamentos" class="plan-section">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                    <div class="plan-block-title" style="margin:0;">🖥️ Equipamentos de Imagem</div>
+                    <button class="qb-action-btn qb-action-save" onclick="planAddEquip()">+ Adicionar Equipamento</button>
+                </div>
+                <div id="plan-equip-list"></div>
+            </div>
+
+            <!-- ── SEÇÃO: SERVIDORES ── -->
+            <div id="plan-section-servidores" class="plan-section">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                    <div class="plan-block-title" style="margin:0;">🗄️ Servidores</div>
+                    <button class="qb-action-btn qb-action-save" onclick="planAddServidor()">+ Adicionar Servidor</button>
+                </div>
+                <div id="plan-servidor-list"></div>
+            </div>
+
+            <!-- ── SEÇÃO: USUÁRIOS ── -->
+            <div id="plan-section-usuarios" class="plan-section">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                    <div class="plan-block-title" style="margin:0;">👥 Usuários do Sistema</div>
+                    <button class="qb-action-btn qb-action-save" onclick="planAddUsuario()">+ Adicionar Usuário</button>
+                </div>
+                <div id="plan-usuario-list"></div>
+                <div class="plan-perm-ref">
+                    <div class="plan-block-title" style="margin-bottom:10px;">📖 Tipos de Permissão</div>
+                    <div class="plan-perm-item"><strong>MÉDICO RADIOLOGISTA</strong> — Assina laudos, visualiza imagens.</div>
+                    <div class="plan-perm-item"><strong>TÉCNICO</strong> — Preparo de exames, conferência de imagens e consulta a pacientes.</div>
+                    <div class="plan-perm-item"><strong>DIGITADOR (A)</strong> — Acesso aos exames para auxiliar os médicos nos laudos.</div>
+                    <div class="plan-perm-item"><strong>MÉDICO SOLICITANTE</strong> — Visualiza apenas os exames atribuídos a ele.</div>
+                    <div class="plan-perm-item"><strong>GESTOR</strong> — Acesso a todas as ferramentas do portal.</div>
+                    <div class="plan-perm-item"><strong>FINANCEIRO / RELATÓRIOS</strong> — Acesso aos relatórios.</div>
+                    <div class="plan-perm-item"><strong>SOMENTE LEITURA</strong> — Consulta lista de exames e laudos.</div>
+                </div>
+            </div>
+
+            <!-- ── SEÇÃO: ANOTAÇÕES ── -->
+            <div id="plan-section-anotacoes" class="plan-section">
+                <div class="plan-block-title">📝 Anotações Gerais</div>
+                <textarea id="p_anotacoes" rows="12" placeholder="Observações gerais sobre a implantação..." style="width:100%; background:rgba(255,255,255,0.13); color:white; border:1px solid rgba(255,255,255,0.3); border-radius:10px; padding:14px; font-size:13px; font-family:'Segoe UI',sans-serif; outline:none; resize:vertical; line-height:1.6;"></textarea>
+            </div>
+
+            <!-- Botão exportar -->
+            <div style="margin-top:24px; display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
+                <button class="qb-action-btn qb-action-danger" onclick="planLimparTudo()">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+                    Limpar Tudo
+                </button>
+                <button class="qb-action-btn qb-action-save" style="padding:10px 22px; font-size:13px;" onclick="planExportarExcel()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Exportar Planilha (.xlsx)
+                </button>
+            </div>
+
+        </div><!-- fim implantacao-panel-planilha -->
+
+    </div>
+</div>
+
+<!-- SheetJS para exportar/importar Excel -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- Scripts -->
+<script src="script.js"></script>
+</body>
+</html>
