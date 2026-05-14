@@ -375,6 +375,31 @@ var CMD_DATA = {
         { secao: 'DICOM / PACS', label: 'Verificar porta DICOM padrão', cmd: 'netstat -an | findstr 104',                             tags: 'dicom pacs porta 104' },
         { secao: 'DICOM / PACS', label: 'Testar porta DICOM',           cmd: 'Test-NetConnection -ComputerName HOST -Port 104',       tags: 'dicom pacs porta teste' },
         { secao: 'DICOM / PACS', label: 'Verificar porta worklist',     cmd: 'netstat -an | findstr 1105',                            tags: 'dicom worklist porta 1105' },
+        // Portas & Rede
+        { secao: 'Portas & Rede', label: 'Listar todas as portas abertas',          cmd: 'netstat -an',                                                  tags: 'porta rede aberta listen' },
+        { secao: 'Portas & Rede', label: 'Portas em LISTEN (aguardando conexão)',   cmd: 'netstat -an | findstr LISTENING',                              tags: 'porta listen escuta aberta' },
+        { secao: 'Portas & Rede', label: 'Verificar qual processo usa uma porta',   cmd: 'netstat -ano | findstr :104',                                  tags: 'porta processo pid ocupada' },
+        { secao: 'Portas & Rede', label: 'Matar processo que ocupa uma porta',      cmd: 'FOR /F "tokens=5" %P IN ("netstat -ano | findstr :104") DO taskkill /PID %P /F', tags: 'porta matar processo kill pid' },
+        { secao: 'Portas & Rede', label: 'Testar porta remota (PowerShell)',         cmd: 'Test-NetConnection -ComputerName HOST -Port 104',               tags: 'porta remota teste tcp' },
+        { secao: 'Portas & Rede', label: 'Testar porta com timeout (PowerShell)',    cmd: '(New-Object Net.Sockets.TcpClient).Connect("HOST", 104)',      tags: 'porta tcp socket timeout' },
+        { secao: 'Portas & Rede', label: 'Listar portas TCP abertas com PID',        cmd: 'netstat -aon | findstr TCP',                                   tags: 'porta tcp pid lista' },
+        { secao: 'Portas & Rede', label: 'Listar portas UDP abertas',                cmd: 'netstat -aon | findstr UDP',                                   tags: 'porta udp lista' },
+        { secao: 'Portas & Rede', label: 'Ver porta 80 (HTTP)',                      cmd: 'netstat -an | findstr :80',                                    tags: 'porta 80 http' },
+        { secao: 'Portas & Rede', label: 'Ver porta 443 (HTTPS)',                    cmd: 'netstat -an | findstr :443',                                   tags: 'porta 443 https ssl' },
+        { secao: 'Portas & Rede', label: 'Ver porta 22 (SSH)',                       cmd: 'netstat -an | findstr :22',                                    tags: 'porta 22 ssh' },
+        { secao: 'Portas & Rede', label: 'Ver porta 3389 (RDP)',                     cmd: 'netstat -an | findstr :3389',                                  tags: 'porta 3389 rdp remote desktop' },
+        { secao: 'Portas & Rede', label: 'Ver porta 8080 (HTTP alternativo)',        cmd: 'netstat -an | findstr :8080',                                  tags: 'porta 8080 http alternativo' },
+        { secao: 'Portas & Rede', label: 'Ver porta 8443 (HTTPS alternativo)',       cmd: 'netstat -an | findstr :8443',                                  tags: 'porta 8443 https alternativo' },
+        { secao: 'Portas & Rede', label: 'Verificar porta DICOM (104)',              cmd: 'netstat -an | findstr :104',                                   tags: 'porta dicom 104 pacs' },
+        { secao: 'Portas & Rede', label: 'Verificar porta Worklist (1105)',          cmd: 'netstat -an | findstr :1105',                                  tags: 'porta worklist 1105 dicom' },
+        { secao: 'Portas & Rede', label: 'Verificar porta SQL Server (1433)',        cmd: 'netstat -an | findstr :1433',                                  tags: 'porta sql server 1433 banco' },
+        { secao: 'Portas & Rede', label: 'Verificar porta MySQL (3306)',             cmd: 'netstat -an | findstr :3306',                                  tags: 'porta mysql 3306 banco' },
+        { secao: 'Portas & Rede', label: 'Verificar porta PostgreSQL (5432)',        cmd: 'netstat -an | findstr :5432',                                  tags: 'porta postgres 5432 banco' },
+        { secao: 'Portas & Rede', label: 'Verificar porta Firebird (3050)',          cmd: 'netstat -an | findstr :3050',                                  tags: 'porta firebird 3050 banco' },
+        { secao: 'Portas & Rede', label: 'Verificar porta RabbitMQ (5672)',          cmd: 'netstat -an | findstr :5672',                                  tags: 'porta rabbitmq 5672 fila' },
+        { secao: 'Portas & Rede', label: 'Verificar porta Redis (6379)',             cmd: 'netstat -an | findstr :6379',                                  tags: 'porta redis 6379 cache' },
+        { secao: 'Portas & Rede', label: 'Abrir porta no Firewall Windows',         cmd: 'netsh advfirewall firewall add rule name="PORTA" protocol=TCP dir=in localport=104 action=allow', tags: 'porta abrir firewall liberar' },
+        { secao: 'Portas & Rede', label: 'Fechar porta no Firewall Windows',        cmd: 'netsh advfirewall firewall add rule name="BLOQUEAR" protocol=TCP dir=in localport=104 action=block', tags: 'porta fechar bloquear firewall' },
         // Firewall
         { secao: 'Firewall',  label: 'Ver regras do firewall',           cmd: 'netsh advfirewall firewall show rule name=all',         tags: 'firewall regras' },
         { secao: 'Firewall',  label: 'Desativar firewall (temporário)',  cmd: 'netsh advfirewall set allprofiles state off',           tags: 'firewall desativar off' },
@@ -422,6 +447,31 @@ var CMD_DATA = {
         { secao: 'DICOM / PACS', label: 'Ver logs do dcm4chee',        cmd: 'sudo journalctl -u wildfly -f',                         tags: 'dicom pacs dcm4chee logs wildfly' },
         { secao: 'DICOM / PACS', label: 'Reiniciar dcm4chee',          cmd: 'sudo systemctl restart wildfly',                        tags: 'dicom pacs dcm4chee reiniciar wildfly' },
         { secao: 'DICOM / PACS', label: 'Ver porta worklist',          cmd: 'ss -tuln | grep 1105',                                  tags: 'dicom worklist porta 1105' },
+        // Portas & Rede
+        { secao: 'Portas & Rede', label: 'Listar todas as portas abertas',          cmd: 'ss -tuln',                                                     tags: 'porta rede aberta listen' },
+        { secao: 'Portas & Rede', label: 'Portas em LISTEN com processo',           cmd: 'ss -tulnp',                                                    tags: 'porta listen processo pid' },
+        { secao: 'Portas & Rede', label: 'Verificar qual processo usa uma porta',   cmd: 'sudo lsof -i :104',                                            tags: 'porta processo pid ocupada lsof' },
+        { secao: 'Portas & Rede', label: 'Matar processo que ocupa uma porta',      cmd: 'sudo fuser -k 104/tcp',                                        tags: 'porta matar processo kill fuser' },
+        { secao: 'Portas & Rede', label: 'Testar porta remota (nc)',                cmd: 'nc -zv HOST 104',                                              tags: 'porta remota teste nc netcat' },
+        { secao: 'Portas & Rede', label: 'Testar porta com timeout (nc)',           cmd: 'nc -zvw 3 HOST 104',                                           tags: 'porta tcp timeout nc' },
+        { secao: 'Portas & Rede', label: 'Testar porta remota (bash)',              cmd: 'bash -c "echo > /dev/tcp/HOST/104" && echo aberta || echo fechada', tags: 'porta remota bash tcp' },
+        { secao: 'Portas & Rede', label: 'Listar portas TCP abertas',               cmd: 'ss -tln',                                                      tags: 'porta tcp lista aberta' },
+        { secao: 'Portas & Rede', label: 'Listar portas UDP abertas',               cmd: 'ss -uln',                                                      tags: 'porta udp lista aberta' },
+        { secao: 'Portas & Rede', label: 'Ver porta 80 (HTTP)',                     cmd: 'ss -tuln | grep :80',                                          tags: 'porta 80 http' },
+        { secao: 'Portas & Rede', label: 'Ver porta 443 (HTTPS)',                   cmd: 'ss -tuln | grep :443',                                         tags: 'porta 443 https ssl' },
+        { secao: 'Portas & Rede', label: 'Ver porta 22 (SSH)',                      cmd: 'ss -tuln | grep :22',                                          tags: 'porta 22 ssh' },
+        { secao: 'Portas & Rede', label: 'Ver porta 8080 (HTTP alternativo)',       cmd: 'ss -tuln | grep :8080',                                        tags: 'porta 8080 http alternativo' },
+        { secao: 'Portas & Rede', label: 'Ver porta 8443 (HTTPS alternativo)',      cmd: 'ss -tuln | grep :8443',                                        tags: 'porta 8443 https alternativo' },
+        { secao: 'Portas & Rede', label: 'Verificar porta DICOM (104)',             cmd: 'ss -tuln | grep :104',                                         tags: 'porta dicom 104 pacs' },
+        { secao: 'Portas & Rede', label: 'Verificar porta Worklist (1105)',         cmd: 'ss -tuln | grep :1105',                                        tags: 'porta worklist 1105 dicom' },
+        { secao: 'Portas & Rede', label: 'Verificar porta MySQL (3306)',            cmd: 'ss -tuln | grep :3306',                                        tags: 'porta mysql 3306 banco' },
+        { secao: 'Portas & Rede', label: 'Verificar porta PostgreSQL (5432)',       cmd: 'ss -tuln | grep :5432',                                        tags: 'porta postgres 5432 banco' },
+        { secao: 'Portas & Rede', label: 'Verificar porta Firebird (3050)',         cmd: 'ss -tuln | grep :3050',                                        tags: 'porta firebird 3050 banco' },
+        { secao: 'Portas & Rede', label: 'Verificar porta RabbitMQ (5672)',         cmd: 'ss -tuln | grep :5672',                                        tags: 'porta rabbitmq 5672 fila' },
+        { secao: 'Portas & Rede', label: 'Verificar porta Redis (6379)',            cmd: 'ss -tuln | grep :6379',                                        tags: 'porta redis 6379 cache' },
+        { secao: 'Portas & Rede', label: 'Scan de portas num host (nmap)',          cmd: 'nmap -p 1-1024 HOST',                                          tags: 'porta scan nmap host' },
+        { secao: 'Portas & Rede', label: 'Liberar porta no firewall (ufw)',         cmd: 'sudo ufw allow 104/tcp',                                       tags: 'porta liberar ufw firewall' },
+        { secao: 'Portas & Rede', label: 'Fechar porta no firewall (ufw)',          cmd: 'sudo ufw deny 104/tcp',                                        tags: 'porta fechar bloquear ufw' },
         // Firewall
         { secao: 'Firewall',  label: 'Ver regras do firewall (ufw)',    cmd: 'sudo ufw status verbose',                               tags: 'firewall ufw regras' },
         { secao: 'Firewall',  label: 'Liberar porta no firewall',       cmd: 'sudo ufw allow 104/tcp',                                tags: 'firewall porta liberar abrir' },
@@ -445,7 +495,7 @@ function cmdRenderOS(os) {
         secoes[c.secao].push(c);
     });
 
-    var iconMap = { 'Rede & IP': '🌐', 'Sistema': '🖥️', 'Banco de Dados': '🗄️', 'DICOM / PACS': '📡', 'Firewall': '🔒' };
+    var iconMap = { 'Rede & IP': '🌐', 'Sistema': '🖥️', 'Banco de Dados': '🗄️', 'DICOM / PACS': '📡', 'Firewall': '🔒', 'Portas & Rede': '🔌' };
 
     el.innerHTML = Object.keys(secoes).map(function(secao, idx) {
         var id = os + '_' + secao.replace(/[^a-z0-9]/gi,'_');
@@ -725,6 +775,17 @@ function setupEventListeners() {
             sel2.querySelector('[data-type="medico"]').classList.add('active');
             updateRegisterField(2, 'CRM');
         }
+    });
+
+    // ── Preview ao vivo: regenera a assinatura enquanto o usuário digita ──
+    var previewDelay;
+    function triggerLivePreview() {
+        clearTimeout(previewDelay);
+        previewDelay = setTimeout(function() { sigRegenIfReady(); }, 400);
+    }
+    ['doctorName', 'doctorCRM', 'doctorName2', 'doctorCRM2',
+     'extraPhrase', 'extraPhrase2'].forEach(function(id) {
+        bindInput(id, triggerLivePreview);
     });
 }
 
