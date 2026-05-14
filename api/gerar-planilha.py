@@ -122,12 +122,6 @@ def gerar_planilha(data):
         ws1.row_dimensions[r].height = 15
     ws1.row_dimensions[21].height = 14.25  # linha levemente menor (igual ao modelo)
 
-    # Linha 1 — título
-    sc(ws1, 1, 2, "Clique ao Lado =>",
-       font=sf(True, "FF0000", 12))
-    sc(ws1, 1, 3, "Requisitos para implantação do Mobilemed",
-       font=sf(False, PRETO, 12))
-
     # ── DADOS CADASTRAIS (B3:C3) ──
     ws1.merge_cells("B3:C3")
     sc(ws1, 3, 2, "DADOS CADASTRAIS",
