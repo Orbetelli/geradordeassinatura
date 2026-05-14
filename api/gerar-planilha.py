@@ -238,13 +238,17 @@ def gerar_planilha(data):
            font=sf(True, BRANCO, 10), fill=pf(AZUL_MED),
            align=al("center"), border=tb())
 
-    for i, eq in enumerate(data.get("equips", []), 2):
-        ws2.row_dimensions[i].height = 15
+    equips = data.get("equips", [])
+    total_eq = max(len(equips), 10)
+    for i in range(total_eq):
+        row = i + 2
+        ws2.row_dimensions[row].height = 15
+        eq = equips[i] if i < len(equips) else {}
         vals = [eq.get(k, "") for k in
                 ("unidade", "modalidade", "marca", "modelo",
                  "ip", "porta", "aetitle", "local", "obs")]
         for c, v in enumerate(vals, 1):
-            sc(ws2, i, c, v, font=sf(False, PRETO, 10),
+            sc(ws2, row, c, v, font=sf(False, PRETO, 10),
                align=al(), border=tb())
 
     # ── ABA 3: Servidores ─────────────────────────────────────────────────────
@@ -264,13 +268,17 @@ def gerar_planilha(data):
            font=sf(True, BRANCO), fill=pf(AZUL_ESC),
            align=al("center"), border=tb())
 
-    for i, sv in enumerate(data.get("servidores", []), 2):
-        ws3.row_dimensions[i].height = 12.75
+    servidores = data.get("servidores", [])
+    total_sv = max(len(servidores), 10)
+    for i in range(total_sv):
+        row = i + 2
+        ws3.row_dimensions[row].height = 12.75
+        sv = servidores[i] if i < len(servidores) else {}
         vals = [sv.get(k, "") for k in
                 ("unidade", "servico", "sistema", "ip",
                  "acesso", "usuario", "senha")]
         for c, v in enumerate(vals, 1):
-            sc(ws3, i, c, v, font=sf(False, PRETO),
+            sc(ws3, row, c, v, font=sf(False, PRETO),
                align=al(), border=tb())
 
     # ── ABA 4: Usuários ───────────────────────────────────────────────────────
@@ -291,12 +299,16 @@ def gerar_planilha(data):
            font=sf(False, BRANCO, 10), fill=pf(AZUL_CLA),
            align=al("center"), border=tb())
 
-    for i, u in enumerate(data.get("usuarios", []), 2):
-        ws4.row_dimensions[i].height = 15
+    usuarios = data.get("usuarios", [])
+    total_usr = max(len(usuarios), 10)
+    for i in range(total_usr):
+        row = i + 2
+        ws4.row_dimensions[row].height = 15
+        u = usuarios[i] if i < len(usuarios) else {}
         vals = [u.get(k, "") for k in
                 ("nome", "email", "telefone", "permissao", "crm", "estado")]
         for c, v in enumerate(vals, 1):
-            sc(ws4, i, c, v, font=sf(False, PRETO, 10),
+            sc(ws4, row, c, v, font=sf(False, PRETO, 10),
                align=al(), border=tb())
 
     # Coluna H — bloco de permissões (igual ao modelo)
