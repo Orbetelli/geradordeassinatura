@@ -368,7 +368,16 @@
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                 Copiar Credenciais
             </button>
-            <button class="pw-modal-btn pw-btn-mensagem" onclick="pwCopiarMensagem()">
+        <!-- Seletor de Portal -->
+        <div class="pw-portal-selector">
+            <span class="pw-portal-label">🌐 Portal da mensagem:</span>
+            <div class="pw-portal-btns">
+                <button class="pw-portal-btn active" onclick="pwSelecionarPortal('mobilemed', this)">🏥 MobileMed</button>
+                <button class="pw-portal-btn" onclick="pwSelecionarPortal('mobilemedvet', this)">🐾 MobilemedVet</button>
+            </div>
+            <input type="hidden" id="pwPortalSelect" value="mobilemed">
+        </div>
+                    <button class="pw-modal-btn pw-btn-mensagem" onclick="pwCopiarMensagem()">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                 Copiar Mensagem
             </button>

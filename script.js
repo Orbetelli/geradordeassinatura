@@ -1371,6 +1371,39 @@ function pwCopiarCredenciais() {
     navigator.clipboard.writeText(texto).then(function(){pwFeedbackBtn('.pw-btn-credenciais','Copiado!');});
 }
 
+var PW_PORTAIS = {
+    'mobilemed':    'laudos.mobilemed.com.br/login',
+    'mobilemedvet': 'portal.mobilemedvet.com.br/exames'
+};
+
+function pwGetPortal() {
+    var sel = document.getElementById('pwPortalSelect');
+    return sel ? (PW_PORTAIS[sel.value] || PW_PORTAIS['mobilemed']) : PW_PORTAIS['mobilemed'];
+}
+
+
+function pwSelecionarPortal(valor, btn) {
+    var input = document.getElementById('pwPortalSelect');
+    if (input) input.value = valor;
+    document.querySelectorAll('.pw-portal-btn').forEach(function(b) { b.classList.remove('active'); });
+    if (btn) btn.classList.add('active');
+}
+
+function pwGetMsgPadrao() {
+    var portal = pwGetPortal();
+    return [
+        'Seja bem-vindo(a) ao nosso sistema de Telerradiologia MobileMed!',
+        'Seguem abaixo as informacoes necessarias para o seu primeiro acesso:',
+        '',
+        'Portal: ' + portal,
+        'Login (e-mail): {email}',
+        'Senha Temporaria: {senha}',
+        '',
+        'Atenciosamente,',
+        'Equipe MobileMed'
+    ].join('\n');
+}
+
 var PW_MSG_PADRAO = [
     'Seja bem-vindo(a) ao nosso sistema de Telerradiologia MobileMed!',
     'Seguem abaixo as informacoes necessarias para o seu primeiro acesso:',
@@ -1386,7 +1419,7 @@ var PW_MSG_PADRAO = [
 function pwCarregarMensagemPadrao() {
     var editor = document.getElementById('pwMsgEditor') || document.getElementById('pwMensagemCustom');
     if (!editor) return;
-    editor.value = PW_MSG_PADRAO;
+    editor.value = pwGetMsgPadrao();
 }
 
 function pwToggleMensagemEditor() {
@@ -1406,7 +1439,7 @@ function pwLimparMensagem() {
 function pwCopiarMensagemCustom() {
     if (!pwSavedUsers.length) return;
     var ed = document.getElementById('pwMensagemCustom');
-    var template = ed && ed.value.trim() ? ed.value : PW_MSG_PADRAO;
+    var template = ed && ed.value.trim() ? ed.value : pwGetMsgPadrao();
     var partes = pwSavedUsers.map(function(u) {
         return template.split('{nome}').join(u.name).split('{email}').join(u.email).split('{senha}').join(u.password);
     });
@@ -1418,7 +1451,7 @@ function pwCopiarMensagemCustom() {
 function pwCopiarMensagem() {
     if (!pwSavedUsers.length) return;
     var editor   = document.getElementById('pwMsgEditor');
-    var template = editor && editor.value.trim() ? editor.value : PW_MSG_PADRAO;
+    var template = editor && editor.value.trim() ? editor.value : pwGetMsgPadrao();
     var partes   = pwSavedUsers.map(function(u) {
         return template
             .split('{nome}').join(u.name)
