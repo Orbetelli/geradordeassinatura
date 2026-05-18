@@ -151,7 +151,7 @@ def gerar_planilha(data):
         ("IP:",                         "rmm_ip"),
         ("Porta:",                       "rmm_porta"),
         ("E-Title",                      "rmm_etitle"),
-        ("AnyDesk / Team Viwer:",        "rmm_anydesk"),
+        ("AnyDesk / TeamViewer:",         "rmm_anydesk"),
         ("Senha:",                       "rmm_senha"),
         ("Login do Windows",             "rmm_login"),
         ("Senha do Usuário:",            "rmm_senhawin"),
@@ -164,7 +164,7 @@ def gerar_planilha(data):
 
     # ── INFORMAÇÕES DE SISTEMAS ADICIONAIS (B15:C15) ──
     ws1.merge_cells("B15:C15")
-    sc(ws1, 15, 2, "INFORMAÇOES DE SISTEMAS ADCIONAIS",
+    sc(ws1, 15, 2, "INFORMAÇÕES DE SISTEMAS ADICIONAIS",
        font=sf(True, BRANCO), fill=pf(AZUL_ESC), align=al())
 
     # Perguntas com merges B:C (linhas 16–25, pulando linhas pares para espaço)
@@ -183,14 +183,14 @@ def gerar_planilha(data):
 
     # ── INFORMAÇÕES DO TI (G15:H15) ──
     ws1.merge_cells("G15:H15")
-    sc(ws1, 15, 7, "INFORMAÇOES DO TI",
+    sc(ws1, 15, 7, "INFORMAÇÕES DO TI",
        font=sf(True, BRANCO), fill=pf(AZUL_ESC), align=al())
 
     campos_ti = [
         ("Responsável do T.I:", "ti_resp"),
         ("Fone TI:",             "ti_fone"),
         ("E-mail do TI:",        "ti_email"),
-        ("Ti local ou tercerizado", "ti_tipo"),
+        ("TI Local ou Terceirizado:", "ti_tipo"),
         ("Observações:",         "ti_obs"),
     ]
     for i, (label, chave) in enumerate(campos_ti, 16):
@@ -206,7 +206,7 @@ def gerar_planilha(data):
         ("IP:",                  "rwl_ip"),
         ("Porta:",               "rwl_porta"),
         ("E-Title",              "rwl_etitle"),
-        ("AnyDesk / Team Viwer:", "rwl_anydesk"),
+        ("AnyDesk / TeamViewer:", "rwl_anydesk"),
         ("Senha:",               "rwl_senha"),
         ("Login do Windows",     "rwl_login"),
         ("Senha do Usuário:",    "rwl_senhawin"),
@@ -306,7 +306,7 @@ def gerar_planilha(data):
                align=al(), border=tb())
 
     # Coluna H — bloco de permissões (igual ao modelo)
-    sc(ws4, 1, 8, "TIPO DE DE PERMISSIONAMENTOS",
+    sc(ws4, 1, 8, "TIPOS DE PERMISSIONAMENTOS",
        font=sf(True, BRANCO, 10), fill=pf(AZUL_DK), align=al("center"))
 
     tipos = ["MEDICO RADIOLOGISTA", "TECNICO", "DIGITADOR",

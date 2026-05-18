@@ -33,14 +33,37 @@ function mostrarToastAtualizacao(msg, data, hash) {
     var toast = document.createElement('div');
     toast.id        = 'updateToast';
     toast.className = 'update-toast';
-    toast.innerHTML =
-        '<span class="update-toast-icon">🚀</span>' +
-        '<div class="update-toast-body">' +
-            '<div class="update-toast-title">Sistema atualizado!</div>' +
-            '<div class="update-toast-msg">' + msg + '</div>' +
-            '<div class="update-toast-commit">' + data + ' · ' + hash + '</div>' +
-        '</div>' +
-        '<button class="update-toast-close" onclick="fecharToast()">✕</button>';
+
+    var icon    = document.createElement('span');
+    icon.className = 'update-toast-icon';
+    icon.textContent = '🚀';
+
+    var body    = document.createElement('div');
+    body.className = 'update-toast-body';
+
+    var title   = document.createElement('div');
+    title.className = 'update-toast-title';
+    title.textContent = 'Sistema atualizado!';
+
+    var msgEl   = document.createElement('div');
+    msgEl.className = 'update-toast-msg';
+    msgEl.textContent = msg;
+
+    var commitEl = document.createElement('div');
+    commitEl.className = 'update-toast-commit';
+    commitEl.textContent = data + ' · ' + hash;
+
+    var closeBtn = document.createElement('button');
+    closeBtn.className = 'update-toast-close';
+    closeBtn.textContent = '✕';
+    closeBtn.onclick = fecharToast;
+
+    body.appendChild(title);
+    body.appendChild(msgEl);
+    body.appendChild(commitEl);
+    toast.appendChild(icon);
+    toast.appendChild(body);
+    toast.appendChild(closeBtn);
     document.body.appendChild(toast);
     requestAnimationFrame(function() {
         requestAnimationFrame(function() { toast.classList.add('show'); });
@@ -725,6 +748,9 @@ document.addEventListener('DOMContentLoaded', function() {
     qbInit();
     storageInit();
     cmdInit();
+    planRenderEquips();
+    planRenderServidores();
+    planRenderUsuarios();
 });
 
 function setupEventListeners() {
@@ -1465,18 +1491,6 @@ function pwGetMsgPadrao() {
     ].join('\n');
 }
 
-var PW_MSG_PADRAO = [
-    'Seja bem-vindo(a) ao nosso sistema de Telerradiologia MobileMed!',
-    'Seguem abaixo as informacoes necessarias para o seu primeiro acesso:',
-    '',
-    'Portal: laudos.mobilemed.com.br/login',
-    'Login (e-mail): {email}',
-    'Senha Temporaria: {senha}',
-    '',
-    'Atenciosamente,',
-    'Equipe MobileMed'
-].join('\n');
-
 function pwCarregarMensagemPadrao() {
     var editor = document.getElementById('pwMsgEditor') || document.getElementById('pwMensagemCustom');
     if (!editor) return;
@@ -1534,7 +1548,6 @@ function pwFeedbackBtn(selector, msg) {
 
 function pwRemoveUser(i) {
     pwSavedUsers.splice(i, 1);
-    document.getElementById('savedCount').textContent = pwSavedUsers.length;
     pwRenderUsers();
 }
 
@@ -1752,8 +1765,9 @@ function planRenderUsuarios() {
 }
 
 function planInput(label, id, val, placeholder, field) {
+    var safeVal = (val || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
     return '<div class="plan-input-group"><label>' + label + '</label>' +
-        '<input type="text" id="' + id + '" value="' + (val||'') + '" placeholder="' + placeholder + '" ' +
+        '<input type="text" id="' + id + '" value="' + safeVal + '" placeholder="' + placeholder + '" ' +
         'oninput="planUpdateField(\'' + field + '\', this.value)"></div>';
 }
 
@@ -1838,13 +1852,6 @@ function planExportarExcel() {
 }
 
 
-// Init planilha: render listas vazias
-document.addEventListener('DOMContentLoaded', function() {
-    planRenderEquips();
-    planRenderServidores();
-    planRenderUsuarios();
-});
-
 function qbInit() {
     qbRenderDbChips();
     qbRenderViewChips();
@@ -1875,10 +1882,19 @@ function qbSelectDb(id) {
 }
 
 // ── Sub-abas do Query Builder ──────────
+// NOTA: adicionar id="qb-inner-tabs" no <div class="qb-tabs" style="margin-top: 4px;">
+// dentro de implantacao-panel-querybuilder no HTML para eliminar o fallback abaixo.
 function qbSwitchTab(tabId, btn) {
     var container = document.getElementById('implantacao-panel-querybuilder');
     container.querySelectorAll('.qb-panel').forEach(function(p) { p.classList.remove('active'); });
-    container.querySelectorAll('.qb-tabs:nth-of-type(2) .qb-tab').forEach(function(b) { b.classList.remove('active'); });
+    var qbTabsEl = document.getElementById('qb-inner-tabs');
+    if (qbTabsEl) {
+        qbTabsEl.querySelectorAll('.qb-tab').forEach(function(b) { b.classList.remove('active'); });
+    } else {
+        // Fallback: sobe pelo DOM a partir do botão clicado até o .qb-tabs pai
+        var parent = btn.closest('.qb-tabs');
+        if (parent) parent.querySelectorAll('.qb-tab').forEach(function(b) { b.classList.remove('active'); });
+    }
     document.getElementById('qb-panel-' + tabId).classList.add('active');
     btn.classList.add('active');
 }
