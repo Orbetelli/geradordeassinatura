@@ -2588,7 +2588,6 @@ var DICOM_TAGS = [
     { group: 0x0010, elem: 0x0020, nome: 'Patient ID',        cat: 'Paciente' },
     { group: 0x0010, elem: 0x0030, nome: 'Birth Date',        cat: 'Paciente' },
     { group: 0x0010, elem: 0x0040, nome: 'Sex',               cat: 'Paciente' },
-    { group: 0x0010, elem: 0x1000, nome: 'Other Patient IDs',  cat: 'Paciente' },
     // Estudo
     { group: 0x0008, elem: 0x0020, nome: 'Study Date',        cat: 'Estudo' },
     { group: 0x0008, elem: 0x0030, nome: 'Study Time',        cat: 'Estudo' },
@@ -2602,7 +2601,6 @@ var DICOM_TAGS = [
     { group: 0x0008, elem: 0x1010, nome: 'Station Name',      cat: 'Equipamento' },
     { group: 0x0008, elem: 0x0080, nome: 'Institution Name',  cat: 'Equipamento' },
     { group: 0x0008, elem: 0x0055, nome: 'AE Title',          cat: 'Equipamento' },
-    { group: 0x0008, elem: 0x1040, nome: 'Institutional Department', cat: 'Equipamento' },
     // Técnico
     { group: 0x0028, elem: 0x0010, nome: 'Rows',              cat: 'Técnico' },
     { group: 0x0028, elem: 0x0011, nome: 'Columns',           cat: 'Técnico' },
@@ -2649,78 +2647,124 @@ function dcmParsear(buffer) {
     var dados = {};
     var pos   = 0;
 
-    // Verifica preamble DICOM (132 bytes) ou começa do zero
-    var temPreamble = false;
+    // Verifica preamble DICOM (132 bytes)
     if (buffer.byteLength > 132) {
         var magic = String.fromCharCode(
             view.getUint8(128), view.getUint8(129),
             view.getUint8(130), view.getUint8(131)
         );
-        if (magic === 'DICM') { temPreamble = true; pos = 132; }
+        if (magic === 'DICM') { pos = 132; }
     }
 
-    // Detecta Transfer Syntax do File Meta (grupo 0002)
-    var transferSyntax = '1.2.840.10008.1.2.1'; // padrão
+    var transferSyntax = '1.2.840.10008.1.2.1'; // Explicit VR Little Endian (padrão)
     var explicitVR     = true;
-    var littleEndian   = true;
+    var metaFimPos     = -1; // onde termina o grupo 0002
 
-    // Lê tags até o final do buffer
-    var maxPos = Math.min(buffer.byteLength, 65536); // lê os primeiros 64KB (header é suficiente)
-    while (pos < maxPos - 8) {
+    // Primeira passagem: lê o grupo 0002 para pegar Transfer Syntax e tamanho do File Meta
+    var posMeta = pos;
+    while (posMeta < buffer.byteLength - 8) {
         try {
-            var group = view.getUint16(pos,      true);
-            var elem  = view.getUint16(pos + 2,  true);
+            var gm = view.getUint16(posMeta, true);
+            var em = view.getUint16(posMeta + 2, true);
+            posMeta += 4;
+            if (gm !== 0x0002) { metaFimPos = posMeta - 4; break; }
+            // grupo 0002 sempre Explicit VR
+            var vrm = String.fromCharCode(view.getUint8(posMeta), view.getUint8(posMeta + 1));
+            posMeta += 2;
+            var lm = 0;
+            if (['OB','OW','SQ','UC','UN','UR','UT'].indexOf(vrm) !== -1) {
+                posMeta += 2;
+                lm = view.getUint32(posMeta, true); posMeta += 4;
+            } else {
+                lm = view.getUint16(posMeta, true); posMeta += 2;
+            }
+            if (lm === 0xFFFFFFFF || lm < 0 || posMeta + lm > buffer.byteLength) break;
+            if (gm === 0x0002 && em === 0x0000) {
+                // FileMetaInformationGroupLength — tamanho do bloco meta
+                metaFimPos = posMeta + lm + (posMeta - pos - 4 - 2 - 2);
+            }
+            if (gm === 0x0002 && em === 0x0010) {
+                var tsBytes = new Uint8Array(buffer, posMeta, lm);
+                transferSyntax = String.fromCharCode.apply(null, tsBytes).replace(/\x00/g,'').trim();
+                dados['__transferSyntax'] = transferSyntax;
+                // Implicit VR Little Endian
+                if (transferSyntax === '1.2.840.10008.1.2') explicitVR = false;
+            }
+            posMeta += lm;
+        } catch(e) { break; }
+    }
+
+    // Lê o arquivo inteiro (até pixel data), sem limite de 64KB
+    while (pos < buffer.byteLength - 8) {
+        try {
+            var group = view.getUint16(pos, true);
+            var elem  = view.getUint16(pos + 2, true);
             pos += 4;
 
-            // Pixel data — para aqui, não tenta decodificar
+            // Pixel data — para aqui
             if (group === 0x7FE0 && elem === 0x0010) break;
 
             var vr     = '';
             var length = 0;
 
-            if (explicitVR && group !== 0x0002) {
-                // Explicit VR
+            if (group === 0x0002) {
+                // Grupo File Meta — sempre Explicit VR
                 vr = String.fromCharCode(view.getUint8(pos), view.getUint8(pos + 1));
                 pos += 2;
                 if (['OB','OW','SQ','UC','UN','UR','UT'].indexOf(vr) !== -1) {
-                    pos += 2; // reserved
+                    pos += 2;
                     length = view.getUint32(pos, true); pos += 4;
                 } else {
                     length = view.getUint16(pos, true); pos += 2;
                 }
+            } else if (explicitVR) {
+                // Explicit VR
+                var vrStr = String.fromCharCode(view.getUint8(pos), view.getUint8(pos + 1));
+                // Valida se é um VR real (2 letras maiúsculas)
+                if (/^[A-Z]{2}$/.test(vrStr)) {
+                    vr = vrStr;
+                    pos += 2;
+                    if (['OB','OW','SQ','UC','UN','UR','UT'].indexOf(vr) !== -1) {
+                        pos += 2;
+                        length = view.getUint32(pos, true); pos += 4;
+                    } else {
+                        length = view.getUint16(pos, true); pos += 2;
+                    }
+                } else {
+                    // Fallback para Implicit
+                    vr = 'UN';
+                    length = view.getUint32(pos, true); pos += 4;
+                }
             } else {
-                // Implicit VR ou grupo 0002
-                length = view.getUint32(pos, true); pos += 4;
+                // Implicit VR
                 vr = 'UN';
+                length = view.getUint32(pos, true); pos += 4;
             }
 
-            if (length === 0xFFFFFFFF || length < 0) { break; } // undefined length
+            if (length === 0xFFFFFFFF || length < 0) { pos += 0; break; }
             if (pos + length > buffer.byteLength)    { break; }
 
-            // Extrai valor de texto
+            // Extrai valor de texto (até 4KB para cobrir UIDs longos)
             var valor = '';
-            if (length > 0 && length < 512) {
-                if (['OB','OW','SQ','UN'].indexOf(vr) === -1) {
+            if (length > 0 && length <= 4096) {
+                if (['OB','OW','SQ'].indexOf(vr) === -1) {
                     var bytes = new Uint8Array(buffer, pos, length);
                     valor = String.fromCharCode.apply(null, bytes).replace(/\x00/g, '').trim();
                 }
             }
 
-            // Captura Transfer Syntax (0002,0010)
+            // Captura Transfer Syntax
             if (group === 0x0002 && elem === 0x0010 && valor) {
                 transferSyntax = valor;
                 dados['__transferSyntax'] = valor;
-                if (valor === '1.2.840.10008.1.2') {
-                    explicitVR = false; // Implicit VR
-                }
+                if (valor === '1.2.840.10008.1.2') explicitVR = false;
             }
 
-            // Armazena a tag
             var key = dcmTagKey(group, elem);
             if (valor) dados[key] = valor;
 
             pos += length;
-        } catch(e) { break; }
+        } catch(e) { pos++; continue; } // pula byte e tenta continuar
     }
 
     dados['__transferSyntax'] = dados['__transferSyntax'] || transferSyntax;
