@@ -1016,187 +1016,111 @@ body.tema-escuro .storage-btn-open { color: #1a1040; }
     color: #38ef7d;
     font-weight: 600;
 }
-
 /* ========================================
-   EDITAR USUÁRIO SALVO
+   QUERY BUILDER — INPUT DE LIMITE
    ======================================== */
-.edit-btn {
-    background: rgba(56, 150, 239, 0.2);
-    border: 1px solid rgba(56, 150, 239, 0.5);
-    color: white;
-    border-radius: 8px;
-    padding: 5px 10px;
-    cursor: pointer;
-    font-size: 12px;
-    font-family: 'Segoe UI', sans-serif;
-    transition: background 0.2s;
-    white-space: nowrap;
-}
-.edit-btn:hover { background: rgba(56, 150, 239, 0.4); }
-
-.pw-edit-form {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 4px 0;
-}
-.pw-edit-row {
+.qb-limit-row {
     display: flex;
     align-items: center;
     gap: 10px;
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 10px;
 }
-.pw-edit-label {
-    font-size: 11px;
-    font-weight: 700;
-    opacity: 0.6;
-    text-transform: uppercase;
-    min-width: 42px;
+.qb-limit-label {
+    font-size: 12px;
+    font-weight: 600;
+    opacity: 0.7;
+    white-space: nowrap;
 }
-.pw-edit-input {
-    flex: 1;
+.qb-limit-input {
+    width: 90px;
     background: rgba(255,255,255,0.12);
-    border: 1px solid rgba(255,255,255,0.3);
+    border: 1px solid rgba(255,255,255,0.25);
     border-radius: 7px;
     color: white;
-    padding: 6px 10px;
+    padding: 5px 10px;
     font-size: 13px;
     font-family: 'Segoe UI', sans-serif;
     outline: none;
     transition: border-color 0.2s;
+    text-align: center;
 }
-.pw-edit-input:focus { border-color: rgba(255,255,255,0.6); }
-
-/* ========================================
-   FAVORITOS — COMANDOS
-   ======================================== */
-.cmd-fav-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 15px;
-    padding: 2px 4px;
-    border-radius: 6px;
-    opacity: 0.45;
-    transition: opacity 0.2s, transform 0.15s;
-    flex-shrink: 0;
-    line-height: 1;
-}
-.cmd-fav-btn:hover { opacity: 1; transform: scale(1.2); }
-.cmd-fav-btn.cmd-fav-active { opacity: 1; }
-
-.cmd-accordion-btn--fav {
-    background: rgba(255, 215, 0, 0.08) !important;
-}
-.cmd-accordion-btn--fav:hover {
-    background: rgba(255, 215, 0, 0.15) !important;
-}
-.cmd-accordion-btn--fav.active {
-    background: rgba(255, 215, 0, 0.18) !important;
-}
-
-/* ========================================
-   MODAL EDIÇÃO DE COMANDO
-   ======================================== */
-.cmd-edit-modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.55);
-    backdrop-filter: blur(4px);
-    z-index: 2000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-}
-.cmd-edit-modal-overlay.open { opacity: 1; }
-
-.cmd-edit-modal {
-    background: linear-gradient(145deg, #1a3a5c, #0f2a45);
-    border: 1.5px solid rgba(255,255,255,0.2);
-    border-radius: 16px;
-    padding: 24px;
-    width: 100%;
-    max-width: 560px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-    transform: translateY(10px);
-    transition: transform 0.2s ease;
-}
-.cmd-edit-modal-overlay.open .cmd-edit-modal { transform: translateY(0); }
-
-.cmd-edit-modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-    font-size: 15px;
-    font-weight: 700;
-    color: white;
-}
-.cmd-edit-modal-header button {
-    background: none;
-    border: none;
-    color: rgba(255,255,255,0.5);
-    font-size: 18px;
-    cursor: pointer;
-    padding: 0 4px;
-    transition: color 0.2s;
-}
-.cmd-edit-modal-header button:hover { color: white; }
-
-.cmd-edit-modal-hint {
-    font-size: 12px;
-    opacity: 0.6;
-    margin-bottom: 14px;
+.qb-limit-input:focus { border-color: rgba(255,255,255,0.55); }
+.qb-limit-input::placeholder { color: rgba(255,255,255,0.35); }
+.qb-limit-hint {
+    font-size: 11px;
+    opacity: 0.5;
     font-style: italic;
 }
 
-.cmd-edit-textarea {
-    width: 100%;
-    min-height: 80px;
-    background: rgba(0,0,0,0.3);
-    border: 1.5px solid rgba(255,255,255,0.25);
-    border-radius: 10px;
+/* ========================================
+   QUERY BUILDER — RENOMEAR SALVA
+   ======================================== */
+.qb-rename-input {
+    flex: 1;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.35);
+    border-radius: 7px;
     color: white;
-    font-family: 'Courier New', monospace;
+    padding: 5px 10px;
     font-size: 13px;
-    padding: 12px 14px;
-    resize: vertical;
+    font-family: 'Segoe UI', sans-serif;
     outline: none;
-    line-height: 1.6;
     transition: border-color 0.2s;
+    min-width: 0;
 }
-.cmd-edit-textarea:focus { border-color: rgba(255,255,255,0.55); }
+.qb-rename-input:focus { border-color: rgba(255,255,255,0.65); }
+.qb-rename-btn-save, .qb-rename-btn-cancel {
+    background: none;
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 6px;
+    color: white;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 4px 9px;
+    transition: background 0.2s;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.qb-rename-btn-save  { border-color: rgba(56,239,125,0.5); color: #38ef7d; }
+.qb-rename-btn-save:hover  { background: rgba(56,239,125,0.15); }
+.qb-rename-btn-cancel:hover { background: rgba(255,255,255,0.1); }
 
-.cmd-edit-modal-actions {
+/* ========================================
+   GERADOR DE SENHA — FORÇA
+   ======================================== */
+.pw-forca-wrap {
     display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 16px;
+    align-items: center;
+    gap: 8px;
+    margin-top: 2px;
 }
-.cmd-edit-btn-cancel {
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.2);
-    color: white;
-    border-radius: 8px;
-    padding: 8px 18px;
-    font-size: 13px;
-    font-family: 'Segoe UI', sans-serif;
-    cursor: pointer;
-    transition: background 0.2s;
+.pw-forca-bar-bg {
+    flex: 1;
+    height: 4px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 4px;
+    overflow: hidden;
 }
-.cmd-edit-btn-cancel:hover { background: rgba(255,255,255,0.15); }
-.cmd-edit-btn-copy {
-    background: rgba(17, 153, 142, 0.4);
-    border: 1px solid rgba(17, 153, 142, 0.7);
-    color: white;
-    border-radius: 8px;
-    padding: 8px 18px;
-    font-size: 13px;
-    font-weight: 600;
-    font-family: 'Segoe UI', sans-serif;
-    cursor: pointer;
-    transition: background 0.2s;
+.pw-forca-bar {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.35s ease, background-color 0.35s ease;
 }
-.cmd-edit-btn-copy:hover { background: rgba(17, 153, 142, 0.65); }
+.pw-forca-fraca  { background-color: #e74c3c; }
+.pw-forca-media  { background-color: #f39c12; }
+.pw-forca-forte  { background-color: #38ef7d; }
+.pw-forca-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.pw-forca-label.pw-forca-fraca { color: #e74c3c; }
+.pw-forca-label.pw-forca-media { color: #f39c12; }
+.pw-forca-label.pw-forca-forte { color: #38ef7d; }

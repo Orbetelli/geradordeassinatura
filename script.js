@@ -133,8 +133,6 @@ function cmdSwitchOS(os, btn) {
     // Limpa busca ao trocar OS
     var inp = document.getElementById('cmdSearch');
     if (inp && inp.value) { inp.value = ''; cmdLimparBusca(); }
-    // Atualiza favoritos do OS ativo
-    cmdRenderFavoritos(os);
 }
 
 function cmdCopiar(btn, texto) {
@@ -159,70 +157,6 @@ function cmdCopiarItem(btn) {
     var ta = document.createElement('textarea');
     ta.innerHTML = texto;
     cmdCopiar(btn, ta.value);
-}
-
-// Modal de edição antes de copiar
-function cmdCopiarItemModal(btn) {
-    var item = btn;
-    while (item && !item.classList.contains('cmd-item')) item = item.parentElement;
-    if (!item) return;
-
-    var ta = document.createElement('textarea');
-    ta.innerHTML = item.getAttribute('data-cmd');
-    var textoOriginal = ta.value;
-
-    // Remove modal anterior se existir
-    var old = document.getElementById('cmdEditModal');
-    if (old) old.remove();
-
-    var modal = document.createElement('div');
-    modal.id = 'cmdEditModal';
-    modal.className = 'cmd-edit-modal-overlay';
-    modal.innerHTML =
-        '<div class="cmd-edit-modal">' +
-            '<div class="cmd-edit-modal-header">' +
-                '<span>✏️ Editar antes de copiar</span>' +
-                '<button onclick="document.getElementById(\'cmdEditModal\').remove()">✕</button>' +
-            '</div>' +
-            '<div class="cmd-edit-modal-hint">Substitua os valores antes de copiar (HOST, NomeServico, etc.)</div>' +
-            '<textarea id="cmdEditTextarea" class="cmd-edit-textarea" spellcheck="false">' + textoOriginal.replace(/</g,'&lt;') + '</textarea>' +
-            '<div class="cmd-edit-modal-actions">' +
-                '<button class="cmd-edit-btn-cancel" onclick="document.getElementById(\'cmdEditModal\').remove()">Cancelar</button>' +
-                '<button class="cmd-edit-btn-copy" onclick="cmdConfirmarCopia()">📋 Copiar</button>' +
-            '</div>' +
-        '</div>';
-
-    // Fecha ao clicar fora
-    modal.addEventListener('click', function(e) {
-        if (e.target === modal) modal.remove();
-    });
-
-    document.body.appendChild(modal);
-    requestAnimationFrame(function() {
-        requestAnimationFrame(function() { modal.classList.add('open'); });
-    });
-
-    // Foca e seleciona tudo no textarea
-    var textarea = document.getElementById('cmdEditTextarea');
-    if (textarea) { textarea.focus(); textarea.select(); }
-}
-
-function cmdConfirmarCopia() {
-    var textarea = document.getElementById('cmdEditTextarea');
-    if (!textarea) return;
-    var texto = textarea.value;
-    navigator.clipboard.writeText(texto).then(function() {
-        var modal = document.getElementById('cmdEditModal');
-        var btn   = modal ? modal.querySelector('.cmd-edit-btn-copy') : null;
-        if (btn) {
-            var orig = btn.innerHTML;
-            btn.innerHTML = '✅ Copiado!';
-            setTimeout(function() {
-                btn.innerHTML = orig;
-                if (modal) modal.remove();
-            }, 1000);
-        }
-    });
 }
 
 // ========================================
@@ -300,7 +234,8 @@ var QB_SYNTAX = {
         fmtBirthDate:function(col, alias) { return "CONVERT(VARCHAR(10), TRY_CONVERT(DATE, " + col + ", 103), 103) AS " + alias; },
         today:       "CAST(GETDATE() AS DATE)",
         betweenDate: function(col, v1, v2) { return "TRY_CONVERT(DATE, " + col + ", 112) BETWEEN '" + v1 + "' AND '" + v2 + "'"; },
-        datePlaceholder: 'YYYYMMDD'
+        datePlaceholder: 'YYYYMMDD',
+        limitTop:    true   // SQL Server usa TOP N antes das colunas
     },
     mysql: {
         fmtDate:     function(col, alias) { return "DATE_FORMAT(STR_TO_DATE(" + col + ", '%Y%m%d'), '%d/%m/%Y') AS " + alias; },
@@ -308,7 +243,8 @@ var QB_SYNTAX = {
         fmtBirthDate:function(col, alias) { return "DATE_FORMAT(STR_TO_DATE(" + col + ", '%d/%m/%Y'), '%d/%m/%Y') AS " + alias; },
         today:       "CURDATE()",
         betweenDate: function(col, v1, v2) { return "STR_TO_DATE(" + col + ", '%Y%m%d') BETWEEN '" + v1 + "' AND '" + v2 + "'"; },
-        datePlaceholder: 'YYYY-MM-DD'
+        datePlaceholder: 'YYYY-MM-DD',
+        limitTop:    false  // MySQL/Postgres usam LIMIT no final
     },
     postgres: {
         fmtDate:     function(col, alias) { return "TO_CHAR(TO_DATE(" + col + ", 'YYYYMMDD'), 'DD/MM/YYYY') AS " + alias; },
@@ -316,7 +252,8 @@ var QB_SYNTAX = {
         fmtBirthDate:function(col, alias) { return "TO_CHAR(TO_DATE(" + col + ", 'DD/MM/YYYY'), 'DD/MM/YYYY') AS " + alias; },
         today:       "CURRENT_DATE",
         betweenDate: function(col, v1, v2) { return "TO_DATE(" + col + ", 'YYYYMMDD') BETWEEN '" + v1 + "' AND '" + v2 + "'"; },
-        datePlaceholder: 'YYYY-MM-DD'
+        datePlaceholder: 'YYYY-MM-DD',
+        limitTop:    false
     },
     firebird: {
         fmtDate:     function(col, alias) { return "CAST(" + col + " AS DATE) AS " + alias; },
@@ -324,7 +261,8 @@ var QB_SYNTAX = {
         fmtBirthDate:function(col, alias) { return "CAST(" + col + " AS DATE) AS " + alias; },
         today:       "CURRENT_DATE",
         betweenDate: function(col, v1, v2) { return "CAST(" + col + " AS DATE) BETWEEN '" + v1 + "' AND '" + v2 + "'"; },
-        datePlaceholder: 'YYYY-MM-DD'
+        datePlaceholder: 'YYYY-MM-DD',
+        limitTop:    true   // Firebird usa FIRST N (tratado como TOP)
     },
     aws: {
         fmtDate:     function(col, alias) { return "DATE_FORMAT(STR_TO_DATE(" + col + ", '%Y%m%d'), '%d/%m/%Y') AS " + alias; },
@@ -332,7 +270,8 @@ var QB_SYNTAX = {
         fmtBirthDate:function(col, alias) { return "DATE_FORMAT(STR_TO_DATE(" + col + ", '%d/%m/%Y'), '%d/%m/%Y') AS " + alias; },
         today:       "CURDATE()",
         betweenDate: function(col, v1, v2) { return "STR_TO_DATE(" + col + ", '%Y%m%d') BETWEEN '" + v1 + "' AND '" + v2 + "'"; },
-        datePlaceholder: 'YYYY-MM-DD'
+        datePlaceholder: 'YYYY-MM-DD',
+        limitTop:    false
     }
 };
 
@@ -388,7 +327,8 @@ var qbState = {
     db: null,
     view: null,
     selectedFields: [],
-    filters: []
+    filters: [],
+    limit: null   // null = sem limite; número = TOP/LIMIT N
 };
 
 var qbSavedQueries = JSON.parse(localStorage.getItem('mobilemed-qb-saved') || '[]');
@@ -400,64 +340,6 @@ var qbHistorico    = JSON.parse(localStorage.getItem('mobilemed-qb-hist')  || '[
 // ========================================
 
 var CMD_OS_ATUAL = 'windows';
-
-// ── Favoritos de comandos ──────────────
-var cmdFavoritos = JSON.parse(localStorage.getItem('mobilemed-cmd-favoritos') || '[]');
-
-function cmdIsFav(os, cmd) {
-    return cmdFavoritos.some(function(f) { return f.os === os && f.cmd === cmd; });
-}
-
-function cmdToggleFav(os, cmd, btn) {
-    var idx = cmdFavoritos.findIndex(function(f) { return f.os === os && f.cmd === cmd; });
-    if (idx === -1) {
-        var label = '';
-        (CMD_DATA[os] || []).forEach(function(c) { if (c.cmd === cmd) label = c.label; });
-        cmdFavoritos.push({ os: os, cmd: cmd, label: label });
-    } else {
-        cmdFavoritos.splice(idx, 1);
-    }
-    localStorage.setItem('mobilemed-cmd-favoritos', JSON.stringify(cmdFavoritos));
-    var isFav = cmdIsFav(os, cmd);
-    btn.textContent = isFav ? '\u2B50' : '\u2606';
-    btn.title       = isFav ? 'Remover dos favoritos' : 'Adicionar aos favoritos';
-    btn.classList.toggle('cmd-fav-active', isFav);
-    cmdRenderFavoritos(CMD_OS_ATUAL);
-}
-
-function cmdRenderFavoritos(os) {
-    var el = document.getElementById('cmd-favoritos-' + os);
-    if (!el) return;
-    var favs = cmdFavoritos.filter(function(f) { return f.os === os; });
-    if (!favs.length) { el.style.display = 'none'; return; }
-    el.style.display = 'block';
-    var itens = favs.map(function(f) {
-        var cmdEsc = f.cmd.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
-        return '<div class="cmd-item" data-cmd="' + cmdEsc + '">' +
-            '<div class="cmd-info">' +
-            '<span class="cmd-label">' + f.label + '</span>' +
-            '<code class="cmd-code">' + f.cmd + '</code>' +
-            '</div>' +
-            '<div style="display:flex;gap:6px;">' +
-            '<button class="cmd-fav-btn cmd-fav-active" title="Remover dos favoritos" ' +
-            'onclick="cmdToggleFav(\'' + os + '\', this.closest(\'.cmd-item\').getAttribute(\'data-cmd\'), this)">\u2B50</button>' +
-            '<button class="cmd-copy-btn" onclick="cmdCopiarItemModal(this)">&#128203;</button>' +
-            '</div>' +
-            '</div>';
-    }).join('');
-    el.innerHTML =
-        '<div class="cmd-accordion" style="border-color:rgba(255,215,0,0.35);">' +
-        '<button class="cmd-accordion-btn cmd-accordion-btn--fav" data-secao="cmd-fav-body-' + os + '" onclick="cmdToggleSecao(this)">' +
-            '<span class="cmd-accordion-icon">\u2B50</span>' +
-            '<span class="cmd-accordion-title">Favoritos</span>' +
-            '<span class="cmd-accordion-count">' + favs.length + '</span>' +
-            '<svg class="cmd-accordion-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>' +
-        '</button>' +
-        '<div class="cmd-accordion-body open" id="cmd-fav-body-' + os + '">' +
-            '<div class="cmd-list">' + itens + '</div>' +
-        '</div>' +
-        '</div>';
-}
 
 var CMD_DATA = {
     windows: [
@@ -621,25 +503,16 @@ function cmdRenderOS(os) {
 
     var iconMap = { 'Rede & IP': '🌐', 'Sistema': '🖥️', 'Banco de Dados': '🗄️', 'DICOM / PACS': '📡', 'Firewall': '🔒', 'Portas & Rede': '🔌' };
 
-    var favContainer = '<div id="cmd-favoritos-' + os + '" style="display:none; margin-bottom:10px;"></div>';
-
-    var acordeoes = Object.keys(secoes).map(function(secao) {
+    el.innerHTML = Object.keys(secoes).map(function(secao, idx) {
         var id = os + '_' + secao.replace(/[^a-z0-9]/gi,'_');
         var itens = secoes[secao].map(function(c) {
             var cmdEsc = c.cmd.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
-            var isFav  = cmdIsFav(os, c.cmd);
             return '<div class="cmd-item" data-cmd="' + cmdEsc + '">' +
                 '<div class="cmd-info">' +
                 '<span class="cmd-label">' + c.label + '</span>' +
                 '<code class="cmd-code">' + c.cmd + '</code>' +
                 '</div>' +
-                '<div style="display:flex;gap:6px;">' +
-                '<button class="cmd-fav-btn' + (isFav ? ' cmd-fav-active' : '') + '" ' +
-                'title="' + (isFav ? 'Remover dos favoritos' : 'Adicionar aos favoritos') + '" ' +
-                'onclick="cmdToggleFav(\'' + os + '\', this.closest(\'.cmd-item\').getAttribute(\'data-cmd\'), this)">' +
-                (isFav ? '⭐' : '☆') + '</button>' +
-                '<button class="cmd-copy-btn" onclick="cmdCopiarItemModal(this)">📋</button>' +
-                '</div>' +
+                '<button class="cmd-copy-btn" onclick="cmdCopiarItem(this)">📋</button>' +
                 '</div>';
         }).join('');
         var count = secoes[secao].length;
@@ -655,9 +528,6 @@ function cmdRenderOS(os) {
             '</div>' +
             '</div>';
     }).join('');
-
-    el.innerHTML = favContainer + acordeoes;
-    cmdRenderFavoritos(os);
 }
 
 function cmdToggleSecao(btn) {
@@ -717,19 +587,12 @@ function cmdFiltrar(q) {
         filtrado.map(function(item) {
             var c = item.cmd;
             var cmdEsc = c.cmd.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
-            var isFav  = cmdIsFav(item.os, c.cmd);
             return '<div class="cmd-item" data-cmd="' + cmdEsc + '">' +
                 '<div class="cmd-info">' +
                 '<span class="cmd-label">' + c.label + ' <span class="cmd-os-badge">' + osBadge[item.os] + '</span></span>' +
                 '<code class="cmd-code">' + c.cmd + '</code>' +
                 '</div>' +
-                '<div style="display:flex;gap:6px;">' +
-                '<button class="cmd-fav-btn' + (isFav ? ' cmd-fav-active' : '') + '" ' +
-                'title="' + (isFav ? 'Remover dos favoritos' : 'Adicionar aos favoritos') + '" ' +
-                'onclick="cmdToggleFav(\'' + item.os + '\', this.closest(\'.cmd-item\').getAttribute(\'data-cmd\'), this)">' +
-                (isFav ? '⭐' : '☆') + '</button>' +
-                '<button class="cmd-copy-btn" onclick="cmdCopiarItemModal(this)">📋</button>' +
-                '</div>' +
+                '<button class="cmd-copy-btn" onclick="cmdCopiarItem(this)">📋</button>' +
                 '</div>';
         }).join('') +
         '</div>';
@@ -868,6 +731,9 @@ document.addEventListener('DOMContentLoaded', function() {
     qbInit();
     storageInit();
     cmdInit();
+    planRenderEquips();
+    planRenderServidores();
+    planRenderUsuarios();
 });
 
 function setupEventListeners() {
@@ -1359,6 +1225,35 @@ function pwParsearNomes() {
 
 function pwRand(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
 
+// ── Força da senha ─────────────────────
+function pwCalcularForca(senha) {
+    var score = 0;
+    var len = senha.length;
+    if (len >= 8)  score++;
+    if (len >= 12) score++;
+    if (len >= 16) score++;
+    if (/[a-z]/.test(senha)) score++;
+    if (/[A-Z]/.test(senha)) score++;
+    if (/[0-9]/.test(senha)) score++;
+    if (/[@#$%&!]/.test(senha)) score++;
+    if (score <= 3) return { label: 'Fraca',  cls: 'pw-forca-fraca',  pct: 33  };
+    if (score <= 5) return { label: 'Média',  cls: 'pw-forca-media',  pct: 66  };
+    return              { label: 'Forte',  cls: 'pw-forca-forte',  pct: 100 };
+}
+
+function pwRenderForca(containerId, senha) {
+    var el = document.getElementById(containerId);
+    if (!el) return;
+    var f = pwCalcularForca(senha);
+    el.innerHTML =
+        '<div class="pw-forca-wrap">' +
+        '<div class="pw-forca-bar-bg">' +
+        '<div class="pw-forca-bar ' + f.cls + '" style="width:' + f.pct + '%"></div>' +
+        '</div>' +
+        '<span class="pw-forca-label ' + f.cls + '">' + f.label + '</span>' +
+        '</div>';
+}
+
 function pwGerarSenha(len,useSpecial,upperOnly) {
     var lower='abcdefghijklmnopqrstuvwxyz',upper='ABCDEFGHIJKLMNOPQRSTUVWXYZ',digits='0123456789',special='@#$%&!';
     var chars=upperOnly?upper+digits:lower+upper+digits;
@@ -1385,11 +1280,15 @@ function pwGerarSenhas() {
 
     for (var i = 0; i < qty; i++) {
         var senha = prefix + '@' + pwGerarSenha(len, useSpecial, upperOnly);
+        var forcaId = 'pw-forca-' + Date.now() + '-' + i;
         var div   = document.createElement('div');
         div.className = 'pw-password-item';
         div.setAttribute('data-senha', senha);
         div.innerHTML =
-            '<span>' + senha + '</span>' +
+            '<div style="flex:1;min-width:0;">' +
+            '<span style="display:block;margin-bottom:4px;">' + senha + '</span>' +
+            '<div id="' + forcaId + '"></div>' +
+            '</div>' +
             '<button onclick="pwRegenOne(this,\'' + prefix + '\',' + len + ',' + useSpecial + ',' + upperOnly + ')" title="Regerar">' +
             '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
             '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button>' +
@@ -1402,6 +1301,7 @@ function pwGerarSenhas() {
             '<rect x="9" y="9" width="13" height="13" rx="2"/>' +
             '<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>';
         list.appendChild(div);
+        pwRenderForca(forcaId, senha);
     }
 }
 
@@ -1456,12 +1356,21 @@ function pwGeralFeedback(btn, icon) {
 }
 
 function pwRegenOne(btn, prefix, len, useSpecial, upperOnly) {
-    var item = btn.closest('.pw-password-item');
-    var nova = prefix + '@' + pwGerarSenha(len, useSpecial, upperOnly);
+    var item  = btn.closest('.pw-password-item');
+    var nova  = prefix + '@' + pwGerarSenha(len, useSpecial, upperOnly);
     item.querySelector('span').textContent = nova;
-    item.setAttribute('data-senha', nova); // atualiza data-senha também
+    item.setAttribute('data-senha', nova);
     item.style.animation = 'none';
     requestAnimationFrame(function() { item.style.animation = 'fadeIn 0.3s ease'; });
+    // Atualiza indicador de força
+    var forcaEl = item.querySelector('.pw-forca-wrap');
+    if (forcaEl) {
+        var f = pwCalcularForca(nova);
+        forcaEl.querySelector('.pw-forca-bar').className = 'pw-forca-bar ' + f.cls;
+        forcaEl.querySelector('.pw-forca-bar').style.width = f.pct + '%';
+        forcaEl.querySelector('.pw-forca-label').className = 'pw-forca-label ' + f.cls;
+        forcaEl.querySelector('.pw-forca-label').textContent = f.label;
+    }
 }
 
 // Gerador de implantação em lote
@@ -1556,7 +1465,7 @@ function pwRenderUsers() {
     actions.style.display='flex';
     document.getElementById('pwMsgSection').style.display = 'block';
     list.innerHTML=pwSavedUsers.map(function(u,i){
-        return '<div class="pw-user-item" id="pw-user-item-'+i+'">'+
+        return '<div class="pw-user-item">'+
             '<div style="min-width:0;flex:1;">'+
             '<div style="font-weight:600;">'+u.name+'</div>'+
             '<div class="uemail">'+u.email+' · '+u.date+'</div>'+
@@ -1564,68 +1473,9 @@ function pwRenderUsers() {
             '</div>'+
             '<div class="uactions">'+
             '<button onclick="navigator.clipboard.writeText(\''+u.password+'\')">Copiar senha</button>'+
-            '<button class="edit-btn" onclick="pwEditUser('+i+')">✏️ Editar</button>'+
             '<button class="del-btn" onclick="pwRemoveUser('+i+')">Remover</button>'+
             '</div></div>';
     }).join('');
-}
-
-function pwEditUser(i) {
-    var u = pwSavedUsers[i];
-    if (!u) return;
-
-    var item = document.getElementById('pw-user-item-' + i);
-    if (!item) return;
-
-    // Substitui o card pelo formulário inline de edição
-    item.innerHTML =
-        '<div style="flex:1; min-width:0;">' +
-        '<div class="pw-edit-form">' +
-        '<div class="pw-edit-row">' +
-        '<label class="pw-edit-label">Nome</label>' +
-        '<input class="pw-edit-input" id="pw-edit-nome-'+i+'" value="'+u.name.replace(/"/g,'&quot;')+'" placeholder="Nome">' +
-        '</div>' +
-        '<div class="pw-edit-row">' +
-        '<label class="pw-edit-label">E-mail</label>' +
-        '<input class="pw-edit-input" id="pw-edit-email-'+i+'" value="'+u.email.replace(/"/g,'&quot;')+'" placeholder="E-mail">' +
-        '</div>' +
-        '<div class="pw-edit-row">' +
-        '<label class="pw-edit-label">Senha</label>' +
-        '<input class="pw-edit-input" id="pw-edit-senha-'+i+'" value="'+u.password.replace(/"/g,'&quot;')+'" placeholder="Senha">' +
-        '</div>' +
-        '</div>' +
-        '</div>' +
-        '<div class="uactions" style="align-self:center;">' +
-        '<button class="edit-btn" onclick="pwSaveEditUser('+i+')">💾 Salvar</button>' +
-        '<button class="del-btn" onclick="pwRenderUsers()">✕ Cancelar</button>' +
-        '</div>';
-}
-
-function pwSaveEditUser(i) {
-    var nome  = document.getElementById('pw-edit-nome-'  + i);
-    var email = document.getElementById('pw-edit-email-' + i);
-    var senha = document.getElementById('pw-edit-senha-' + i);
-    if (!nome || !email || !senha) return;
-
-    var novoEmail = email.value.trim();
-    if (!novoEmail || !novoEmail.includes('@')) {
-        alert('Digite um e-mail válido com @.');
-        return;
-    }
-
-    // Verifica duplicata de e-mail (ignora o próprio usuário)
-    var duplicado = pwSavedUsers.some(function(u, idx) {
-        return idx !== i && u.email === novoEmail;
-    });
-    if (duplicado) {
-        alert('Já existe um usuário com esse e-mail.');
-        return;
-    }
-
-    pwSavedUsers[i].name     = nome.value.trim()  || pwSavedUsers[i].name;
-    pwSavedUsers[i].email    = novoEmail;
-    pwSavedUsers[i].password = senha.value.trim() || pwSavedUsers[i].password;
-    pwRenderUsers();
 }
 
 function pwCopiarCredenciais() {
@@ -2049,6 +1899,25 @@ function qbInit() {
     qbRenderHistorico();
     qbUpdateSalvasCount();
     qbInitConexao();
+    qbRenderLimitRow();
+}
+
+function qbRenderLimitRow() {
+    // Injeta o controle de limite logo acima da query gerada, no qb-block de QUERY GERADA
+    var preview = document.getElementById('qbPreview');
+    if (!preview) return;
+    var block = preview.closest('.qb-block');
+    if (!block || document.getElementById('qbLimitRow')) return;
+
+    var row = document.createElement('div');
+    row.id = 'qbLimitRow';
+    row.className = 'qb-limit-row';
+    row.innerHTML =
+        '<span class="qb-limit-label">🔢 Limite de linhas</span>' +
+        '<input id="qbLimitInput" class="qb-limit-input" type="number" min="1" placeholder="ex: 100" ' +
+        'oninput="qbSetLimit(this.value)">' +
+        '<span class="qb-limit-hint">vazio = sem limite · TOP para SQL Server/Firebird · LIMIT para MySQL/Postgres</span>';
+    block.insertBefore(row, preview);
 }
 
 // ── Chips de BANCO ─────────────────────
@@ -2208,6 +2077,12 @@ function qbGetToday() {
 }
 
 // ── Gerar Query ────────────────────────
+function qbSetLimit(val) {
+    var n = parseInt(val);
+    qbState.limit = (!val || isNaN(n) || n <= 0) ? null : n;
+    qbGerarQuery();
+}
+
 function qbGerarQuery() {
     var prev = document.getElementById('qbPreview');
     if (!prev) return;
@@ -2225,7 +2100,8 @@ function qbGerarQuery() {
         return;
     }
 
-    var s = qbSyntax();
+    var s     = qbSyntax();
+    var limit = qbState.limit;
 
     var cols = qbState.selectedFields.map(function(id) {
         var f = QB_FIELDS.find(function(x) { return x.id === id; });
@@ -2233,8 +2109,16 @@ function qbGerarQuery() {
         return '    ' + (f.fn ? f.fn(s) : f.col);
     }).filter(Boolean);
 
-    var lines = ['SELECT'];
-    lines.push(cols.join(',\n'));
+    // SQL Server e Firebird: TOP/FIRST antes das colunas
+    var selectClause;
+    if (limit && s.limitTop) {
+        var keyword = (qbState.db === 'firebird') ? 'SELECT FIRST ' + limit : 'SELECT TOP ' + limit;
+        selectClause = keyword + '\n' + cols.join(',\n');
+    } else {
+        selectClause = 'SELECT\n' + cols.join(',\n');
+    }
+
+    var lines = [selectClause];
     lines.push('FROM ' + qbState.view);
 
     var wheres = [];
@@ -2259,8 +2143,14 @@ function qbGerarQuery() {
         lines.push(wheres.join('\n  AND\n'));
     }
 
-    lines.push('ORDER BY ' + (qbState.selectedFields.indexOf('study_date') !== -1 ? 'STUDY_DATE DESC' : '1 ASC') + ';');
+    lines.push('ORDER BY ' + (qbState.selectedFields.indexOf('study_date') !== -1 ? 'STUDY_DATE DESC' : '1 ASC'));
 
+    // MySQL, Postgres e AWS Aurora: LIMIT no final
+    if (limit && !s.limitTop) {
+        lines.push('LIMIT ' + limit);
+    }
+
+    lines.push(';');
     prev.value = lines.join('\n');
 }
 
@@ -2291,6 +2181,9 @@ function qbReset() {
     qbState.view = null;
     qbState.selectedFields = [];
     qbState.filters = [];
+    qbState.limit = null;
+    var limitEl = document.getElementById('qbLimitInput');
+    if (limitEl) limitEl.value = '';
     qbRenderDbChips();
     qbRenderViewChips();
     qbRenderFieldChips();
@@ -2315,17 +2208,55 @@ function qbRenderSalvas() {
         : qbSavedQueries;
 
     el.innerHTML = lista.map(function(q, i) {
-        return '<div class="qb-saved-card">' +
+        return '<div class="qb-saved-card" id="qb-saved-card-' + i + '">' +
             '<div class="qb-saved-header">' +
-            '<div><div class="qb-template-title">' + qbEscape(q.titulo) + '</div>' +
-            '<span class="qb-date-badge">' + q.data + '</span></div>' +
+            '<div style="min-width:0;flex:1;">' +
+            '<div class="qb-template-title" id="qb-titulo-' + i + '">' + qbEscape(q.titulo) + '</div>' +
+            '<span class="qb-date-badge">' + q.data + '</span>' +
+            '</div>' +
             '<div class="qb-template-actions">' +
             '<button class="qb-action-btn" onclick="qbCopiarSalva(' + i + ')">📋 Copiar</button>' +
+            '<button class="qb-action-btn" onclick="qbRenomearSalva(' + i + ')" title="Renomear">✏️</button>' +
             '<button class="qb-action-btn qb-action-danger" onclick="qbRemoverSalva(' + i + ')">🗑️</button>' +
             '</div></div>' +
             '<pre class="qb-code qb-code-preview">' + qbEscape(q.query) + '</pre>' +
             '</div>';
     }).join('');
+}
+
+function qbRenomearSalva(i) {
+    var tituloEl = document.getElementById('qb-titulo-' + i);
+    if (!tituloEl) return;
+
+    var atual = qbSavedQueries[i].titulo;
+
+    tituloEl.innerHTML =
+        '<div style="display:flex;gap:8px;align-items:center;width:100%;">' +
+        '<input id="qb-rename-input-' + i + '" class="qb-rename-input" value="' + qbEscape(atual) + '">' +
+        '<button class="qb-rename-btn-save" onclick="qbSalvarRenome(' + i + ')">✔</button>' +
+        '<button class="qb-rename-btn-cancel" onclick="qbRenderSalvas()">✕</button>' +
+        '</div>';
+
+    var input = document.getElementById('qb-rename-input-' + i);
+    if (input) {
+        input.focus();
+        input.select();
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter')  qbSalvarRenome(i);
+            if (e.key === 'Escape') qbRenderSalvas();
+        });
+    }
+}
+
+function qbSalvarRenome(i) {
+    var input = document.getElementById('qb-rename-input-' + i);
+    if (!input) return;
+    var novo = input.value.trim();
+    if (!novo) { qbShowToast('O título não pode ficar vazio.'); return; }
+    qbSavedQueries[i].titulo = novo;
+    qbPersistir();
+    qbRenderSalvas();
+    qbShowToast('Renomeado!');
 }
 
 function qbFiltrarSalvas() { qbRenderSalvas(); }
