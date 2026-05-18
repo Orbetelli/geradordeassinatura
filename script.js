@@ -2450,7 +2450,7 @@ function cechoCopiar(btn, cmd) {
 }
 
 // ========================================
-// DIAGNÓSTICO IA
+// DIAGNÓSTICO IA — via proxy Vercel
 // ========================================
 
 var IA_SYSTEM_PROMPT = [
@@ -2476,13 +2476,13 @@ var IA_SYSTEM_PROMPT = [
     '- Use linguagem técnica mas clara'
 ].join('\n');
 
-var iaHistorico = [];
+var iaHistorico  = [];
 var iaCarregando = false;
 
 function iaEnviar() {
     if (iaCarregando) return;
     var inputEl = document.getElementById('ia_input');
-    var texto = inputEl ? inputEl.value.trim() : '';
+    var texto   = inputEl ? inputEl.value.trim() : '';
     if (!texto) return;
 
     iaAdicionarMsg('user', texto);
@@ -2495,28 +2495,36 @@ function iaEnviar() {
     if (sendBtn) sendBtn.disabled = true;
     iaAdicionarMsg('assistant', '...', 'ia-loading-msg');
 
-    fetch('https://api.anthropic.com/v1/messages', {
+    // Chama o proxy Vercel — sem CORS, API key segura no servidor
+    fetch('/api/ia-diagnostico', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            model: 'claude-sonnet-4-20250514',
+            model:      'claude-sonnet-4-20250514',
             max_tokens: 1000,
-            system: IA_SYSTEM_PROMPT,
-            messages: iaHistorico
+            system:     IA_SYSTEM_PROMPT,
+            messages:   iaHistorico
         })
     })
     .then(function(r) { return r.json(); })
     .then(function(data) {
         var loadingEl = document.getElementById('ia-loading-msg');
         if (loadingEl) loadingEl.remove();
-        var resposta = (data.content && data.content[0] && data.content[0].text) || 'Não foi possível obter resposta.';
+
+        if (data.error) {
+            iaAdicionarMsg('assistant', '⚠️ Erro do servidor: ' + data.error);
+            return;
+        }
+
+        var resposta = (data.content && data.content[0] && data.content[0].text)
+            || 'Não foi possível obter resposta.';
         iaAdicionarMsg('assistant', resposta);
         iaHistorico.push({ role: 'assistant', content: resposta });
     })
     .catch(function() {
         var loadingEl = document.getElementById('ia-loading-msg');
         if (loadingEl) loadingEl.remove();
-        iaAdicionarMsg('assistant', '⚠️ Erro ao conectar com a IA. Verifique sua conexão e tente novamente.');
+        iaAdicionarMsg('assistant', '⚠️ Erro ao conectar com o servidor. Verifique se o deploy está atualizado.');
     })
     .finally(function() {
         iaCarregando = false;

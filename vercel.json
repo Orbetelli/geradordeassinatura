@@ -7,6 +7,7 @@
   ],
   "routes": [
     { "src": "/api/gerar-planilha", "dest": "/api/gerar-planilha.py" },
+    { "src": "/api/ia-diagnostico", "dest": "/api/ia-diagnostico.py" },
     { "src": "/style.css", "dest": "/style.css" },
     { "src": "/script.js", "dest": "/script.js" },
     { "src": "/(.*)", "dest": "/index.html" }
