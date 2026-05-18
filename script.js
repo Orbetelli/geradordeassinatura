@@ -33,37 +33,14 @@ function mostrarToastAtualizacao(msg, data, hash) {
     var toast = document.createElement('div');
     toast.id        = 'updateToast';
     toast.className = 'update-toast';
-
-    var icon    = document.createElement('span');
-    icon.className = 'update-toast-icon';
-    icon.textContent = '🚀';
-
-    var body    = document.createElement('div');
-    body.className = 'update-toast-body';
-
-    var title   = document.createElement('div');
-    title.className = 'update-toast-title';
-    title.textContent = 'Sistema atualizado!';
-
-    var msgEl   = document.createElement('div');
-    msgEl.className = 'update-toast-msg';
-    msgEl.textContent = msg;
-
-    var commitEl = document.createElement('div');
-    commitEl.className = 'update-toast-commit';
-    commitEl.textContent = data + ' · ' + hash;
-
-    var closeBtn = document.createElement('button');
-    closeBtn.className = 'update-toast-close';
-    closeBtn.textContent = '✕';
-    closeBtn.onclick = fecharToast;
-
-    body.appendChild(title);
-    body.appendChild(msgEl);
-    body.appendChild(commitEl);
-    toast.appendChild(icon);
-    toast.appendChild(body);
-    toast.appendChild(closeBtn);
+    toast.innerHTML =
+        '<span class="update-toast-icon">🚀</span>' +
+        '<div class="update-toast-body">' +
+            '<div class="update-toast-title">Sistema atualizado!</div>' +
+            '<div class="update-toast-msg">' + msg + '</div>' +
+            '<div class="update-toast-commit">' + data + ' · ' + hash + '</div>' +
+        '</div>' +
+        '<button class="update-toast-close" onclick="fecharToast()">✕</button>';
     document.body.appendChild(toast);
     requestAnimationFrame(function() {
         requestAnimationFrame(function() { toast.classList.add('show'); });
@@ -156,6 +133,8 @@ function cmdSwitchOS(os, btn) {
     // Limpa busca ao trocar OS
     var inp = document.getElementById('cmdSearch');
     if (inp && inp.value) { inp.value = ''; cmdLimparBusca(); }
+    // Atualiza favoritos do OS ativo
+    cmdRenderFavoritos(os);
 }
 
 function cmdCopiar(btn, texto) {
@@ -180,6 +159,70 @@ function cmdCopiarItem(btn) {
     var ta = document.createElement('textarea');
     ta.innerHTML = texto;
     cmdCopiar(btn, ta.value);
+}
+
+// Modal de edição antes de copiar
+function cmdCopiarItemModal(btn) {
+    var item = btn;
+    while (item && !item.classList.contains('cmd-item')) item = item.parentElement;
+    if (!item) return;
+
+    var ta = document.createElement('textarea');
+    ta.innerHTML = item.getAttribute('data-cmd');
+    var textoOriginal = ta.value;
+
+    // Remove modal anterior se existir
+    var old = document.getElementById('cmdEditModal');
+    if (old) old.remove();
+
+    var modal = document.createElement('div');
+    modal.id = 'cmdEditModal';
+    modal.className = 'cmd-edit-modal-overlay';
+    modal.innerHTML =
+        '<div class="cmd-edit-modal">' +
+            '<div class="cmd-edit-modal-header">' +
+                '<span>✏️ Editar antes de copiar</span>' +
+                '<button onclick="document.getElementById(\'cmdEditModal\').remove()">✕</button>' +
+            '</div>' +
+            '<div class="cmd-edit-modal-hint">Substitua os valores antes de copiar (HOST, NomeServico, etc.)</div>' +
+            '<textarea id="cmdEditTextarea" class="cmd-edit-textarea" spellcheck="false">' + textoOriginal.replace(/</g,'&lt;') + '</textarea>' +
+            '<div class="cmd-edit-modal-actions">' +
+                '<button class="cmd-edit-btn-cancel" onclick="document.getElementById(\'cmdEditModal\').remove()">Cancelar</button>' +
+                '<button class="cmd-edit-btn-copy" onclick="cmdConfirmarCopia()">📋 Copiar</button>' +
+            '</div>' +
+        '</div>';
+
+    // Fecha ao clicar fora
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) modal.remove();
+    });
+
+    document.body.appendChild(modal);
+    requestAnimationFrame(function() {
+        requestAnimationFrame(function() { modal.classList.add('open'); });
+    });
+
+    // Foca e seleciona tudo no textarea
+    var textarea = document.getElementById('cmdEditTextarea');
+    if (textarea) { textarea.focus(); textarea.select(); }
+}
+
+function cmdConfirmarCopia() {
+    var textarea = document.getElementById('cmdEditTextarea');
+    if (!textarea) return;
+    var texto = textarea.value;
+    navigator.clipboard.writeText(texto).then(function() {
+        var modal = document.getElementById('cmdEditModal');
+        var btn   = modal ? modal.querySelector('.cmd-edit-btn-copy') : null;
+        if (btn) {
+            var orig = btn.innerHTML;
+            btn.innerHTML = '✅ Copiado!';
+            setTimeout(function() {
+                btn.innerHTML = orig;
+                if (modal) modal.remove();
+            }, 1000);
+        }
+    });
 }
 
 // ========================================
@@ -358,6 +401,64 @@ var qbHistorico    = JSON.parse(localStorage.getItem('mobilemed-qb-hist')  || '[
 
 var CMD_OS_ATUAL = 'windows';
 
+// ── Favoritos de comandos ──────────────
+var cmdFavoritos = JSON.parse(localStorage.getItem('mobilemed-cmd-favoritos') || '[]');
+
+function cmdIsFav(os, cmd) {
+    return cmdFavoritos.some(function(f) { return f.os === os && f.cmd === cmd; });
+}
+
+function cmdToggleFav(os, cmd, btn) {
+    var idx = cmdFavoritos.findIndex(function(f) { return f.os === os && f.cmd === cmd; });
+    if (idx === -1) {
+        var label = '';
+        (CMD_DATA[os] || []).forEach(function(c) { if (c.cmd === cmd) label = c.label; });
+        cmdFavoritos.push({ os: os, cmd: cmd, label: label });
+    } else {
+        cmdFavoritos.splice(idx, 1);
+    }
+    localStorage.setItem('mobilemed-cmd-favoritos', JSON.stringify(cmdFavoritos));
+    var isFav = cmdIsFav(os, cmd);
+    btn.textContent = isFav ? '\u2B50' : '\u2606';
+    btn.title       = isFav ? 'Remover dos favoritos' : 'Adicionar aos favoritos';
+    btn.classList.toggle('cmd-fav-active', isFav);
+    cmdRenderFavoritos(CMD_OS_ATUAL);
+}
+
+function cmdRenderFavoritos(os) {
+    var el = document.getElementById('cmd-favoritos-' + os);
+    if (!el) return;
+    var favs = cmdFavoritos.filter(function(f) { return f.os === os; });
+    if (!favs.length) { el.style.display = 'none'; return; }
+    el.style.display = 'block';
+    var itens = favs.map(function(f) {
+        var cmdEsc = f.cmd.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+        return '<div class="cmd-item" data-cmd="' + cmdEsc + '">' +
+            '<div class="cmd-info">' +
+            '<span class="cmd-label">' + f.label + '</span>' +
+            '<code class="cmd-code">' + f.cmd + '</code>' +
+            '</div>' +
+            '<div style="display:flex;gap:6px;">' +
+            '<button class="cmd-fav-btn cmd-fav-active" title="Remover dos favoritos" ' +
+            'onclick="cmdToggleFav(\'' + os + '\', this.closest(\'.cmd-item\').getAttribute(\'data-cmd\'), this)">\u2B50</button>' +
+            '<button class="cmd-copy-btn" onclick="cmdCopiarItemModal(this)">&#128203;</button>' +
+            '</div>' +
+            '</div>';
+    }).join('');
+    el.innerHTML =
+        '<div class="cmd-accordion" style="border-color:rgba(255,215,0,0.35);">' +
+        '<button class="cmd-accordion-btn cmd-accordion-btn--fav" data-secao="cmd-fav-body-' + os + '" onclick="cmdToggleSecao(this)">' +
+            '<span class="cmd-accordion-icon">\u2B50</span>' +
+            '<span class="cmd-accordion-title">Favoritos</span>' +
+            '<span class="cmd-accordion-count">' + favs.length + '</span>' +
+            '<svg class="cmd-accordion-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>' +
+        '</button>' +
+        '<div class="cmd-accordion-body open" id="cmd-fav-body-' + os + '">' +
+            '<div class="cmd-list">' + itens + '</div>' +
+        '</div>' +
+        '</div>';
+}
+
 var CMD_DATA = {
     windows: [
         // Rede & IP
@@ -520,16 +621,25 @@ function cmdRenderOS(os) {
 
     var iconMap = { 'Rede & IP': '🌐', 'Sistema': '🖥️', 'Banco de Dados': '🗄️', 'DICOM / PACS': '📡', 'Firewall': '🔒', 'Portas & Rede': '🔌' };
 
-    el.innerHTML = Object.keys(secoes).map(function(secao, idx) {
+    var favContainer = '<div id="cmd-favoritos-' + os + '" style="display:none; margin-bottom:10px;"></div>';
+
+    var acordeoes = Object.keys(secoes).map(function(secao) {
         var id = os + '_' + secao.replace(/[^a-z0-9]/gi,'_');
         var itens = secoes[secao].map(function(c) {
             var cmdEsc = c.cmd.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+            var isFav  = cmdIsFav(os, c.cmd);
             return '<div class="cmd-item" data-cmd="' + cmdEsc + '">' +
                 '<div class="cmd-info">' +
                 '<span class="cmd-label">' + c.label + '</span>' +
                 '<code class="cmd-code">' + c.cmd + '</code>' +
                 '</div>' +
-                '<button class="cmd-copy-btn" onclick="cmdCopiarItem(this)">📋</button>' +
+                '<div style="display:flex;gap:6px;">' +
+                '<button class="cmd-fav-btn' + (isFav ? ' cmd-fav-active' : '') + '" ' +
+                'title="' + (isFav ? 'Remover dos favoritos' : 'Adicionar aos favoritos') + '" ' +
+                'onclick="cmdToggleFav(\'' + os + '\', this.closest(\'.cmd-item\').getAttribute(\'data-cmd\'), this)">' +
+                (isFav ? '⭐' : '☆') + '</button>' +
+                '<button class="cmd-copy-btn" onclick="cmdCopiarItemModal(this)">📋</button>' +
+                '</div>' +
                 '</div>';
         }).join('');
         var count = secoes[secao].length;
@@ -545,6 +655,9 @@ function cmdRenderOS(os) {
             '</div>' +
             '</div>';
     }).join('');
+
+    el.innerHTML = favContainer + acordeoes;
+    cmdRenderFavoritos(os);
 }
 
 function cmdToggleSecao(btn) {
@@ -604,12 +717,19 @@ function cmdFiltrar(q) {
         filtrado.map(function(item) {
             var c = item.cmd;
             var cmdEsc = c.cmd.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+            var isFav  = cmdIsFav(item.os, c.cmd);
             return '<div class="cmd-item" data-cmd="' + cmdEsc + '">' +
                 '<div class="cmd-info">' +
                 '<span class="cmd-label">' + c.label + ' <span class="cmd-os-badge">' + osBadge[item.os] + '</span></span>' +
                 '<code class="cmd-code">' + c.cmd + '</code>' +
                 '</div>' +
-                '<button class="cmd-copy-btn" onclick="cmdCopiarItem(this)">📋</button>' +
+                '<div style="display:flex;gap:6px;">' +
+                '<button class="cmd-fav-btn' + (isFav ? ' cmd-fav-active' : '') + '" ' +
+                'title="' + (isFav ? 'Remover dos favoritos' : 'Adicionar aos favoritos') + '" ' +
+                'onclick="cmdToggleFav(\'' + item.os + '\', this.closest(\'.cmd-item\').getAttribute(\'data-cmd\'), this)">' +
+                (isFav ? '⭐' : '☆') + '</button>' +
+                '<button class="cmd-copy-btn" onclick="cmdCopiarItemModal(this)">📋</button>' +
+                '</div>' +
                 '</div>';
         }).join('') +
         '</div>';
@@ -748,9 +868,6 @@ document.addEventListener('DOMContentLoaded', function() {
     qbInit();
     storageInit();
     cmdInit();
-    planRenderEquips();
-    planRenderServidores();
-    planRenderUsuarios();
 });
 
 function setupEventListeners() {
@@ -1439,7 +1556,7 @@ function pwRenderUsers() {
     actions.style.display='flex';
     document.getElementById('pwMsgSection').style.display = 'block';
     list.innerHTML=pwSavedUsers.map(function(u,i){
-        return '<div class="pw-user-item">'+
+        return '<div class="pw-user-item" id="pw-user-item-'+i+'">'+
             '<div style="min-width:0;flex:1;">'+
             '<div style="font-weight:600;">'+u.name+'</div>'+
             '<div class="uemail">'+u.email+' · '+u.date+'</div>'+
@@ -1447,9 +1564,68 @@ function pwRenderUsers() {
             '</div>'+
             '<div class="uactions">'+
             '<button onclick="navigator.clipboard.writeText(\''+u.password+'\')">Copiar senha</button>'+
+            '<button class="edit-btn" onclick="pwEditUser('+i+')">✏️ Editar</button>'+
             '<button class="del-btn" onclick="pwRemoveUser('+i+')">Remover</button>'+
             '</div></div>';
     }).join('');
+}
+
+function pwEditUser(i) {
+    var u = pwSavedUsers[i];
+    if (!u) return;
+
+    var item = document.getElementById('pw-user-item-' + i);
+    if (!item) return;
+
+    // Substitui o card pelo formulário inline de edição
+    item.innerHTML =
+        '<div style="flex:1; min-width:0;">' +
+        '<div class="pw-edit-form">' +
+        '<div class="pw-edit-row">' +
+        '<label class="pw-edit-label">Nome</label>' +
+        '<input class="pw-edit-input" id="pw-edit-nome-'+i+'" value="'+u.name.replace(/"/g,'&quot;')+'" placeholder="Nome">' +
+        '</div>' +
+        '<div class="pw-edit-row">' +
+        '<label class="pw-edit-label">E-mail</label>' +
+        '<input class="pw-edit-input" id="pw-edit-email-'+i+'" value="'+u.email.replace(/"/g,'&quot;')+'" placeholder="E-mail">' +
+        '</div>' +
+        '<div class="pw-edit-row">' +
+        '<label class="pw-edit-label">Senha</label>' +
+        '<input class="pw-edit-input" id="pw-edit-senha-'+i+'" value="'+u.password.replace(/"/g,'&quot;')+'" placeholder="Senha">' +
+        '</div>' +
+        '</div>' +
+        '</div>' +
+        '<div class="uactions" style="align-self:center;">' +
+        '<button class="edit-btn" onclick="pwSaveEditUser('+i+')">💾 Salvar</button>' +
+        '<button class="del-btn" onclick="pwRenderUsers()">✕ Cancelar</button>' +
+        '</div>';
+}
+
+function pwSaveEditUser(i) {
+    var nome  = document.getElementById('pw-edit-nome-'  + i);
+    var email = document.getElementById('pw-edit-email-' + i);
+    var senha = document.getElementById('pw-edit-senha-' + i);
+    if (!nome || !email || !senha) return;
+
+    var novoEmail = email.value.trim();
+    if (!novoEmail || !novoEmail.includes('@')) {
+        alert('Digite um e-mail válido com @.');
+        return;
+    }
+
+    // Verifica duplicata de e-mail (ignora o próprio usuário)
+    var duplicado = pwSavedUsers.some(function(u, idx) {
+        return idx !== i && u.email === novoEmail;
+    });
+    if (duplicado) {
+        alert('Já existe um usuário com esse e-mail.');
+        return;
+    }
+
+    pwSavedUsers[i].name     = nome.value.trim()  || pwSavedUsers[i].name;
+    pwSavedUsers[i].email    = novoEmail;
+    pwSavedUsers[i].password = senha.value.trim() || pwSavedUsers[i].password;
+    pwRenderUsers();
 }
 
 function pwCopiarCredenciais() {
@@ -1490,6 +1666,18 @@ function pwGetMsgPadrao() {
         'Equipe MobileMed'
     ].join('\n');
 }
+
+var PW_MSG_PADRAO = [
+    'Seja bem-vindo(a) ao nosso sistema de Telerradiologia MobileMed!',
+    'Seguem abaixo as informacoes necessarias para o seu primeiro acesso:',
+    '',
+    'Portal: laudos.mobilemed.com.br/login',
+    'Login (e-mail): {email}',
+    'Senha Temporaria: {senha}',
+    '',
+    'Atenciosamente,',
+    'Equipe MobileMed'
+].join('\n');
 
 function pwCarregarMensagemPadrao() {
     var editor = document.getElementById('pwMsgEditor') || document.getElementById('pwMensagemCustom');
@@ -1548,6 +1736,7 @@ function pwFeedbackBtn(selector, msg) {
 
 function pwRemoveUser(i) {
     pwSavedUsers.splice(i, 1);
+    document.getElementById('savedCount').textContent = pwSavedUsers.length;
     pwRenderUsers();
 }
 
@@ -1765,9 +1954,8 @@ function planRenderUsuarios() {
 }
 
 function planInput(label, id, val, placeholder, field) {
-    var safeVal = (val || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
     return '<div class="plan-input-group"><label>' + label + '</label>' +
-        '<input type="text" id="' + id + '" value="' + safeVal + '" placeholder="' + placeholder + '" ' +
+        '<input type="text" id="' + id + '" value="' + (val||'') + '" placeholder="' + placeholder + '" ' +
         'oninput="planUpdateField(\'' + field + '\', this.value)"></div>';
 }
 
@@ -1882,19 +2070,10 @@ function qbSelectDb(id) {
 }
 
 // ── Sub-abas do Query Builder ──────────
-// NOTA: adicionar id="qb-inner-tabs" no <div class="qb-tabs" style="margin-top: 4px;">
-// dentro de implantacao-panel-querybuilder no HTML para eliminar o fallback abaixo.
 function qbSwitchTab(tabId, btn) {
     var container = document.getElementById('implantacao-panel-querybuilder');
     container.querySelectorAll('.qb-panel').forEach(function(p) { p.classList.remove('active'); });
-    var qbTabsEl = document.getElementById('qb-inner-tabs');
-    if (qbTabsEl) {
-        qbTabsEl.querySelectorAll('.qb-tab').forEach(function(b) { b.classList.remove('active'); });
-    } else {
-        // Fallback: sobe pelo DOM a partir do botão clicado até o .qb-tabs pai
-        var parent = btn.closest('.qb-tabs');
-        if (parent) parent.querySelectorAll('.qb-tab').forEach(function(b) { b.classList.remove('active'); });
-    }
+    container.querySelectorAll('.qb-tabs:nth-of-type(2) .qb-tab').forEach(function(b) { b.classList.remove('active'); });
     document.getElementById('qb-panel-' + tabId).classList.add('active');
     btn.classList.add('active');
 }
