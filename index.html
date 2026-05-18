@@ -504,42 +504,41 @@
 
         <!-- ── SUB-ABA: C-ECHO ── -->
         <div id="suporte-panel-cecho" class="qb-panel">
-
             <div class="cecho-wrap">
                 <div class="cecho-info-box">
                     📡 <strong>Gerador de C-ECHO</strong> — Monte e copie o comando de teste de conectividade DICOM para dcm4che, DCMTK ou PowerShell.
                 </div>
-
-                <div class="cecho-grid">
-                    <div class="cecho-field">
-                        <label class="cecho-label">IP / Host do destino</label>
-                        <input class="cecho-input" id="cecho_host" placeholder="Ex: 192.168.1.100" oninput="cechoGerar()">
-                    </div>
-                    <div class="cecho-field">
-                        <label class="cecho-label">Porta</label>
-                        <input class="cecho-input" id="cecho_port" placeholder="104" value="104" oninput="cechoGerar()">
-                    </div>
-                    <div class="cecho-field">
-                        <label class="cecho-label">
-                            AE Title do destino
-                            <span id="cecho_aec_badge" class="cecho-badge"></span>
-                        </label>
-                        <input class="cecho-input" id="cecho_aec" placeholder="Ex: DCM4CHEE" maxlength="16"
-                            oninput="cechoValidarAE('cecho_aec','cecho_aec_badge'); cechoGerar()">
-                    </div>
-                    <div class="cecho-field">
-                        <label class="cecho-label">
-                            AE Title de origem (seu)
-                            <span id="cecho_aet_badge" class="cecho-badge"></span>
-                        </label>
-                        <input class="cecho-input" id="cecho_aet" placeholder="Ex: SUPORTE" maxlength="16" value="SUPORTE"
-                            oninput="cechoValidarAE('cecho_aet','cecho_aet_badge'); cechoGerar()">
+                <div class="cecho-card">
+                    <div class="cecho-grid">
+                        <div class="cecho-field">
+                            <label class="cecho-label">IP / Host do destino</label>
+                            <input class="cecho-input" id="cecho_host" placeholder="Ex: 192.168.1.100" oninput="cechoGerar()">
+                        </div>
+                        <div class="cecho-field">
+                            <label class="cecho-label">Porta</label>
+                            <input class="cecho-input" id="cecho_port" placeholder="104" value="104" oninput="cechoGerar()">
+                        </div>
+                        <div class="cecho-field">
+                            <label class="cecho-label">
+                                AE Title do destino
+                                <span id="cecho_aec_badge" class="cecho-badge"></span>
+                            </label>
+                            <input class="cecho-input" id="cecho_aec" placeholder="Ex: DCM4CHEE" maxlength="16"
+                                oninput="cechoValidarAE('cecho_aec','cecho_aec_badge'); cechoGerar()">
+                        </div>
+                        <div class="cecho-field">
+                            <label class="cecho-label">
+                                AE Title de origem (seu)
+                                <span id="cecho_aet_badge" class="cecho-badge"></span>
+                            </label>
+                            <input class="cecho-input" id="cecho_aet" placeholder="Ex: SUPORTE" maxlength="16" value="SUPORTE"
+                                oninput="cechoValidarAE('cecho_aet','cecho_aet_badge'); cechoGerar()">
+                        </div>
                     </div>
                 </div>
-
+                <div class="cecho-results-label">Comandos gerados</div>
                 <div id="cecho_results" class="cecho-results"></div>
             </div>
-
         </div><!-- fim suporte-panel-cecho -->
 
         <!-- ── SUB-ABA: DIAGNÓSTICO IA ── -->
@@ -586,13 +585,22 @@
                 <div class="cecho-info-box">
                     🔬 <strong>DICOM Inspector</strong> — Importe um arquivo <code>.dcm</code> para extrair todos os metadados: paciente, estudo, equipamento, UIDs e Transfer Syntax. Nenhum dado sai do seu computador.
                 </div>
-                <div class="dcm-upload-row">
-                    <label class="dcm-upload-btn" for="dcm_file_input">
-                        📂 Selecionar arquivo .dcm
-                    </label>
-                    <input type="file" id="dcm_file_input" accept=".dcm,.DCM" style="display:none;" onchange="dcmLerArquivo(this)">
-                    <button class="dcm-clear-btn" onclick="dcmLimpar()">✕ Limpar</button>
+                <div class="dcm-dropzone" id="dcm_dropzone"
+                    ondragover="event.preventDefault(); this.classList.add('dragover')"
+                    ondragleave="this.classList.remove('dragover')"
+                    ondrop="event.preventDefault(); this.classList.remove('dragover'); dcmLerArquivo({files: event.dataTransfer.files})"
+                    onclick="document.getElementById('dcm_file_input').click()">
+                    <div class="dcm-dropzone-icon">🗂️</div>
+                    <div class="dcm-dropzone-title">Arraste um arquivo .dcm aqui</div>
+                    <div class="dcm-dropzone-sub">ou clique para selecionar</div>
+                    <div class="dcm-upload-row">
+                        <label class="dcm-upload-btn" onclick="event.stopPropagation(); document.getElementById('dcm_file_input').click()">
+                            📂 Selecionar arquivo .dcm
+                        </label>
+                        <button class="dcm-clear-btn" onclick="event.stopPropagation(); dcmLimpar()">✕ Limpar</button>
+                    </div>
                 </div>
+                <input type="file" id="dcm_file_input" accept=".dcm,.DCM" style="display:none;" onchange="dcmLerArquivo(this)">
                 <div id="dcm_status" class="dcm-status"></div>
                 <div id="dcm_resultado"></div>
             </div>
