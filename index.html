@@ -456,6 +456,7 @@
             <button class="qb-tab" onclick="suporteSwitchTab('storage', this)">🗂️ Storage</button>
             <button class="qb-tab" onclick="suporteSwitchTab('cecho', this)">📡 C-ECHO</button>
             <button class="qb-tab" onclick="suporteSwitchTab('ia', this)">🤖 Diagnóstico IA</button>
+            <button class="qb-tab" onclick="suporteSwitchTab('dicom', this)">🔬 DICOM Inspector</button>
         </div>
 
         <!-- ── SUB-ABA: COMANDOS ── -->
@@ -578,6 +579,24 @@
             </div>
 
         </div><!-- fim suporte-panel-ia -->
+
+        <!-- ── SUB-ABA: DICOM INSPECTOR ── -->
+        <div id="suporte-panel-dicom" class="qb-panel">
+            <div class="dcm-wrap">
+                <div class="cecho-info-box">
+                    🔬 <strong>DICOM Inspector</strong> — Importe um arquivo <code>.dcm</code> para extrair todos os metadados: paciente, estudo, equipamento, UIDs e Transfer Syntax. Nenhum dado sai do seu computador.
+                </div>
+                <div class="dcm-upload-row">
+                    <label class="dcm-upload-btn" for="dcm_file_input">
+                        📂 Selecionar arquivo .dcm
+                    </label>
+                    <input type="file" id="dcm_file_input" accept=".dcm,.DCM" style="display:none;" onchange="dcmLerArquivo(this)">
+                    <button class="dcm-clear-btn" onclick="dcmLimpar()">✕ Limpar</button>
+                </div>
+                <div id="dcm_status" class="dcm-status"></div>
+                <div id="dcm_resultado"></div>
+            </div>
+        </div><!-- fim suporte-panel-dicom -->
 
     </div>
 </div>

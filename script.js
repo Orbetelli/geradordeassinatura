@@ -2376,22 +2376,22 @@ function qbLimparConexao() {
 var CECHO_AE_REGEX = /^[A-Za-z0-9 _\-\.]+$/;
 
 function cechoValidarAE(inputId, badgeId) {
-    var val = (document.getElementById(inputId) || {}).value || '';
+    var val   = (document.getElementById(inputId) || {}).value || '';
     var badge = document.getElementById(badgeId);
     if (!badge) return;
     if (!val) { badge.textContent = ''; badge.className = 'cecho-badge'; return; }
     if (val.length > 16) {
         badge.textContent = '⚠️ máx 16 chars';
-        badge.className = 'cecho-badge cecho-badge-warn';
+        badge.className   = 'cecho-badge cecho-badge-warn';
     } else if (!CECHO_AE_REGEX.test(val)) {
         badge.textContent = '⚠️ caractere inválido';
-        badge.className = 'cecho-badge cecho-badge-warn';
+        badge.className   = 'cecho-badge cecho-badge-warn';
     } else if (val !== val.trim()) {
         badge.textContent = '⚠️ espaço no início/fim';
-        badge.className = 'cecho-badge cecho-badge-warn';
+        badge.className   = 'cecho-badge cecho-badge-warn';
     } else {
         badge.textContent = '✔ válido';
-        badge.className = 'cecho-badge cecho-badge-ok';
+        badge.className   = 'cecho-badge cecho-badge-ok';
     }
 }
 
@@ -2404,35 +2404,19 @@ function cechoGerar() {
     if (!el) return;
 
     var cmds = [
-        {
-            label: 'dcm4che (Linux / Windows)',
-            icon: '🔧',
-            cmd: 'storescu -c ' + aec + '@' + host + ':' + port + ' --echo -b ' + aet
-        },
-        {
-            label: 'DCMTK — echoscu (Linux / Windows)',
-            icon: '🛠️',
-            cmd: 'echoscu -aec ' + aec + ' -aet ' + aet + ' ' + host + ' ' + port
-        },
-        {
-            label: 'PowerShell — teste de porta (fallback)',
-            icon: '🪟',
-            cmd: 'Test-NetConnection -ComputerName ' + host + ' -Port ' + port
-        },
-        {
-            label: 'Linux — netcat (teste de porta)',
-            icon: '🐧',
-            cmd: 'nc -zv ' + host + ' ' + port
-        }
+        { label: 'dcm4che (Linux / Windows)',           icon: '🔧', cmd: 'storescu -c ' + aec + '@' + host + ':' + port + ' --echo -b ' + aet },
+        { label: 'DCMTK — echoscu (Linux / Windows)',   icon: '🛠️', cmd: 'echoscu -aec ' + aec + ' -aet ' + aet + ' ' + host + ' ' + port },
+        { label: 'PowerShell — teste de porta',         icon: '🪟', cmd: 'Test-NetConnection -ComputerName ' + host + ' -Port ' + port },
+        { label: 'Linux — netcat (teste de porta)',     icon: '🐧', cmd: 'nc -zv ' + host + ' ' + port }
     ];
 
     el.innerHTML = cmds.map(function(c) {
-        var cmdEsc = c.cmd.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+        var e = c.cmd.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
         return '<div class="cecho-cmd-card">' +
             '<div class="cecho-cmd-header">' +
                 '<span class="cecho-cmd-icon">' + c.icon + '</span>' +
                 '<span class="cecho-cmd-label">' + c.label + '</span>' +
-                '<button class="cecho-copy-btn" onclick="cechoCopiar(this, \'' + cmdEsc + '\')">📋 Copiar</button>' +
+                '<button class="cecho-copy-btn" onclick="cechoCopiar(this,\'' + e + '\')">📋 Copiar</button>' +
             '</div>' +
             '<code class="cecho-cmd-code">' + c.cmd + '</code>' +
         '</div>';
@@ -2450,7 +2434,7 @@ function cechoCopiar(btn, cmd) {
 }
 
 // ========================================
-// DIAGNÓSTICO IA — via proxy Vercel
+// DIAGNÓSTICO IA — proxy Vercel → Gemini
 // ========================================
 
 var IA_SYSTEM_PROMPT = [
@@ -2466,14 +2450,11 @@ var IA_SYSTEM_PROMPT = [
     '- Routers: Mobilemed Router e Worklist Router (Windows)',
     '- Acesso remoto: AnyDesk / TeamViewer',
     '',
-    'Diretrizes de resposta:',
+    'Diretrizes:',
     '- Seja objetivo e prático — o técnico está em atendimento',
     '- Estruture respostas com passos numerados quando for diagnóstico',
-    '- Inclua comandos prontos para copiar quando relevante (Windows e Linux)',
-    '- Indique qual banco/OS o comando se aplica quando necessário',
-    '- Se precisar de mais informações para diagnosticar, pergunte de forma direta',
-    '- Priorize as causas mais comuns antes das raras',
-    '- Use linguagem técnica mas clara'
+    '- Inclua comandos prontos para copiar quando relevante',
+    '- Priorize as causas mais comuns antes das raras'
 ].join('\n');
 
 var iaHistorico  = [];
@@ -2487,7 +2468,6 @@ function iaEnviar() {
 
     iaAdicionarMsg('user', texto);
     inputEl.value = '';
-
     iaHistorico.push({ role: 'user', content: texto });
 
     iaCarregando = true;
@@ -2495,36 +2475,27 @@ function iaEnviar() {
     if (sendBtn) sendBtn.disabled = true;
     iaAdicionarMsg('assistant', '...', 'ia-loading-msg');
 
-    // Chama o proxy Vercel — sem CORS, API key segura no servidor
     fetch('/api/ia-diagnostico', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            model:      'claude-sonnet-4-20250514',
-            max_tokens: 1000,
-            system:     IA_SYSTEM_PROMPT,
-            messages:   iaHistorico
+            system:   IA_SYSTEM_PROMPT,
+            messages: iaHistorico
         })
     })
     .then(function(r) { return r.json(); })
     .then(function(data) {
         var loadingEl = document.getElementById('ia-loading-msg');
         if (loadingEl) loadingEl.remove();
-
-        if (data.error) {
-            iaAdicionarMsg('assistant', '⚠️ Erro do servidor: ' + data.error);
-            return;
-        }
-
-        var resposta = (data.content && data.content[0] && data.content[0].text)
-            || 'Não foi possível obter resposta.';
+        if (data.error) { iaAdicionarMsg('assistant', '⚠️ Erro: ' + data.error); return; }
+        var resposta = (data.content && data.content[0] && data.content[0].text) || 'Sem resposta.';
         iaAdicionarMsg('assistant', resposta);
         iaHistorico.push({ role: 'assistant', content: resposta });
     })
     .catch(function() {
         var loadingEl = document.getElementById('ia-loading-msg');
         if (loadingEl) loadingEl.remove();
-        iaAdicionarMsg('assistant', '⚠️ Erro ao conectar com o servidor. Verifique se o deploy está atualizado.');
+        iaAdicionarMsg('assistant', '⚠️ Erro ao conectar. Verifique se o deploy está atualizado e a GEMINI_API_KEY está configurada no Vercel.');
     })
     .finally(function() {
         iaCarregando = false;
@@ -2556,7 +2527,7 @@ function iaFormatarTexto(texto) {
         .replace(/`([^`]+)`/g, '<code class="ia-code-inline">$1</code>')
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
         .replace(/\*(.*?)\*/g, '<em>$1</em>')
-        .replace(/^\d+\.\s(.+)$/gm, '<div class="ia-list-item ia-list-num">$1</div>')
+        .replace(/^\d+\.\s(.+)$/gm, '<div class="ia-list-item">$1</div>')
         .replace(/^[•\-]\s(.+)$/gm, '<div class="ia-list-item">• $1</div>')
         .replace(/\n\n/g, '<br><br>')
         .replace(/\n/g, '<br>');
@@ -2570,4 +2541,303 @@ function iaLimpar() {
         '<div class="ia-msg ia-msg-assistant">' +
         '<div class="ia-msg-content">Conversa limpa. Pode descrever o novo problema!</div>' +
         '</div>';
+}
+
+// ========================================
+// DICOM INSPECTOR
+// ========================================
+
+// Dicionário de UIDs DICOM mais comuns
+var DICOM_UID_DICT = {
+    // SOP Classes — Imagens
+    '1.2.840.10008.5.1.4.1.1.1':    { nome: 'CR Image Storage',                    cat: 'SOP Class', obs: 'Computed Radiography — Raio-X digital' },
+    '1.2.840.10008.5.1.4.1.1.1.1':  { nome: 'Digital X-Ray Image Storage (Presentation)', cat: 'SOP Class', obs: 'Raio-X digital de apresentação' },
+    '1.2.840.10008.5.1.4.1.1.2':    { nome: 'CT Image Storage',                    cat: 'SOP Class', obs: 'Tomografia Computadorizada' },
+    '1.2.840.10008.5.1.4.1.1.4':    { nome: 'MR Image Storage',                    cat: 'SOP Class', obs: 'Ressonância Magnética' },
+    '1.2.840.10008.5.1.4.1.1.6.1':  { nome: 'Ultrasound Image Storage',            cat: 'SOP Class', obs: 'Ultrassonografia' },
+    '1.2.840.10008.5.1.4.1.1.7':    { nome: 'Secondary Capture Image Storage',     cat: 'SOP Class', obs: 'Captura secundária — screenshot, PDF convertido, etc.' },
+    '1.2.840.10008.5.1.4.1.1.12.1': { nome: 'X-Ray Angiographic Image Storage',   cat: 'SOP Class', obs: 'Angiografia' },
+    '1.2.840.10008.5.1.4.1.1.20':   { nome: 'Nuclear Medicine Image Storage',      cat: 'SOP Class', obs: 'Medicina Nuclear (PET, SPECT)' },
+    '1.2.840.10008.5.1.4.1.1.104.1':{ nome: 'Encapsulated PDF Storage',            cat: 'SOP Class', obs: 'PDF encapsulado — muito comum em laudos digitais' },
+    '1.2.840.10008.5.1.4.1.1.128':  { nome: 'Positron Emission Tomography Image Storage', cat: 'SOP Class', obs: 'PET Scan' },
+    '1.2.840.10008.5.1.4.1.1.481.1':{ nome: 'RT Image Storage',                   cat: 'SOP Class', obs: 'Radioterapia' },
+    // SOP Classes — Serviços
+    '1.2.840.10008.5.1.4.31':        { nome: 'Modality Worklist',                   cat: 'Serviço DICOM', obs: 'Worklist de modalidade — lista de exames agendados' },
+    '1.2.840.10008.5.1.4.1.2.1.1':  { nome: 'Patient Root Q/R — FIND',            cat: 'Serviço DICOM', obs: 'Query/Retrieve por raiz de paciente' },
+    '1.2.840.10008.5.1.4.1.2.1.2':  { nome: 'Patient Root Q/R — MOVE',            cat: 'Serviço DICOM', obs: 'Mover imagens por raiz de paciente' },
+    '1.2.840.10008.5.1.4.1.2.2.1':  { nome: 'Study Root Q/R — FIND',              cat: 'Serviço DICOM', obs: 'Query/Retrieve por raiz de estudo' },
+    '1.2.840.10008.5.1.4.1.2.2.2':  { nome: 'Study Root Q/R — MOVE',              cat: 'Serviço DICOM', obs: 'Mover imagens por raiz de estudo' },
+    '1.2.840.10008.1.1':             { nome: 'Verification SOP Class (C-ECHO)',     cat: 'Serviço DICOM', obs: 'Verificação de conectividade DICOM' },
+    '1.2.840.10008.1.3.10':          { nome: 'Media Storage Directory Storage',     cat: 'Serviço DICOM', obs: 'DICOMDIR — índice de mídia' },
+    // Transfer Syntaxes
+    '1.2.840.10008.1.2':             { nome: 'Implicit VR Little Endian',           cat: 'Transfer Syntax', obs: 'Padrão implícito — sem compressão' },
+    '1.2.840.10008.1.2.1':           { nome: 'Explicit VR Little Endian',           cat: 'Transfer Syntax', obs: 'Padrão explícito — sem compressão' },
+    '1.2.840.10008.1.2.2':           { nome: 'Explicit VR Big Endian',              cat: 'Transfer Syntax', obs: 'Big Endian — pouco comum' },
+    '1.2.840.10008.1.2.4.50':        { nome: 'JPEG Baseline (Process 1)',           cat: 'Transfer Syntax', obs: 'JPEG com perda — qualidade reduzida' },
+    '1.2.840.10008.1.2.4.57':        { nome: 'JPEG Lossless (Non-Hierarchical)',    cat: 'Transfer Syntax', obs: 'JPEG sem perda — boa qualidade' },
+    '1.2.840.10008.1.2.4.70':        { nome: 'JPEG Lossless (Selection Value 1)',   cat: 'Transfer Syntax', obs: 'JPEG sem perda — mais comum em CR/DR' },
+    '1.2.840.10008.1.2.4.90':        { nome: 'JPEG 2000 Lossless',                 cat: 'Transfer Syntax', obs: '⚠️ JPEG 2000 sem perda — requer decoder especial' },
+    '1.2.840.10008.1.2.4.91':        { nome: 'JPEG 2000 (Lossy)',                  cat: 'Transfer Syntax', obs: '⚠️ JPEG 2000 com perda — pode causar problemas em alguns viewers' },
+    '1.2.840.10008.1.2.5':           { nome: 'RLE Lossless',                        cat: 'Transfer Syntax', obs: 'Run-Length Encoding sem perda' },
+};
+
+// Tags DICOM que queremos extrair (tag decimal → info)
+var DICOM_TAGS = [
+    // Paciente
+    { group: 0x0010, elem: 0x0010, nome: 'Patient Name',      cat: 'Paciente' },
+    { group: 0x0010, elem: 0x0020, nome: 'Patient ID',        cat: 'Paciente' },
+    { group: 0x0010, elem: 0x0030, nome: 'Birth Date',        cat: 'Paciente' },
+    { group: 0x0010, elem: 0x0040, nome: 'Sex',               cat: 'Paciente' },
+    // Estudo
+    { group: 0x0008, elem: 0x0020, nome: 'Study Date',        cat: 'Estudo' },
+    { group: 0x0008, elem: 0x0030, nome: 'Study Time',        cat: 'Estudo' },
+    { group: 0x0008, elem: 0x0060, nome: 'Modality',          cat: 'Estudo' },
+    { group: 0x0008, elem: 0x1030, nome: 'Study Description', cat: 'Estudo' },
+    { group: 0x0008, elem: 0x0050, nome: 'Accession Number',  cat: 'Estudo' },
+    { group: 0x0008, elem: 0x0090, nome: 'Referring Physician',cat: 'Estudo' },
+    // Equipamento
+    { group: 0x0008, elem: 0x0070, nome: 'Manufacturer',      cat: 'Equipamento' },
+    { group: 0x0008, elem: 0x1090, nome: 'Model Name',        cat: 'Equipamento' },
+    { group: 0x0008, elem: 0x1010, nome: 'Station Name',      cat: 'Equipamento' },
+    { group: 0x0008, elem: 0x0080, nome: 'Institution Name',  cat: 'Equipamento' },
+    { group: 0x0008, elem: 0x0055, nome: 'AE Title',          cat: 'Equipamento' },
+    // Técnico
+    { group: 0x0028, elem: 0x0010, nome: 'Rows',              cat: 'Técnico' },
+    { group: 0x0028, elem: 0x0011, nome: 'Columns',           cat: 'Técnico' },
+    { group: 0x0028, elem: 0x0030, nome: 'Pixel Spacing',     cat: 'Técnico' },
+    { group: 0x0018, elem: 0x0050, nome: 'Slice Thickness',   cat: 'Técnico' },
+    { group: 0x0018, elem: 0x0060, nome: 'KVP',               cat: 'Técnico' },
+    // UIDs
+    { group: 0x0008, elem: 0x0016, nome: 'SOP Class UID',     cat: 'UIDs' },
+    { group: 0x0008, elem: 0x0018, nome: 'SOP Instance UID',  cat: 'UIDs' },
+    { group: 0x0020, elem: 0x000D, nome: 'Study Instance UID',cat: 'UIDs' },
+    { group: 0x0020, elem: 0x000E, nome: 'Series Instance UID',cat: 'UIDs' },
+];
+
+var dcmDados = null;
+
+function dcmLerArquivo(input) {
+    var file = input.files[0];
+    if (!file) return;
+
+    var statusEl = document.getElementById('dcm_status');
+    if (statusEl) { statusEl.textContent = '⏳ Lendo arquivo...'; statusEl.className = 'dcm-status dcm-status-loading'; }
+
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            var buffer = e.target.result;
+            dcmDados = dcmParsear(buffer);
+            dcmRenderizar(file.name, buffer.byteLength);
+            if (statusEl) { statusEl.textContent = '✅ Arquivo lido com sucesso'; statusEl.className = 'dcm-status dcm-status-ok'; }
+        } catch(err) {
+            if (statusEl) { statusEl.textContent = '❌ Erro: ' + err.message; statusEl.className = 'dcm-status dcm-status-err'; }
+            var resultEl = document.getElementById('dcm_resultado');
+            if (resultEl) resultEl.innerHTML = '';
+        }
+    };
+    reader.onerror = function() {
+        if (statusEl) { statusEl.textContent = '❌ Falha ao ler o arquivo'; statusEl.className = 'dcm-status dcm-status-err'; }
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function dcmParsear(buffer) {
+    var view  = new DataView(buffer);
+    var dados = {};
+    var pos   = 0;
+
+    // Verifica preamble DICOM (132 bytes) ou começa do zero
+    var temPreamble = false;
+    if (buffer.byteLength > 132) {
+        var magic = String.fromCharCode(
+            view.getUint8(128), view.getUint8(129),
+            view.getUint8(130), view.getUint8(131)
+        );
+        if (magic === 'DICM') { temPreamble = true; pos = 132; }
+    }
+
+    // Detecta Transfer Syntax do File Meta (grupo 0002)
+    var transferSyntax = '1.2.840.10008.1.2.1'; // padrão
+    var explicitVR     = true;
+    var littleEndian   = true;
+
+    // Lê tags até o final do buffer
+    var maxPos = Math.min(buffer.byteLength, 65536); // lê os primeiros 64KB (header é suficiente)
+    while (pos < maxPos - 8) {
+        try {
+            var group = view.getUint16(pos,      true);
+            var elem  = view.getUint16(pos + 2,  true);
+            pos += 4;
+
+            // Pixel data — para aqui, não tenta decodificar
+            if (group === 0x7FE0 && elem === 0x0010) break;
+
+            var vr     = '';
+            var length = 0;
+
+            if (explicitVR && group !== 0x0002) {
+                // Explicit VR
+                vr = String.fromCharCode(view.getUint8(pos), view.getUint8(pos + 1));
+                pos += 2;
+                if (['OB','OW','SQ','UC','UN','UR','UT'].indexOf(vr) !== -1) {
+                    pos += 2; // reserved
+                    length = view.getUint32(pos, true); pos += 4;
+                } else {
+                    length = view.getUint16(pos, true); pos += 2;
+                }
+            } else {
+                // Implicit VR ou grupo 0002
+                length = view.getUint32(pos, true); pos += 4;
+                vr = 'UN';
+            }
+
+            if (length === 0xFFFFFFFF || length < 0) { break; } // undefined length
+            if (pos + length > buffer.byteLength)    { break; }
+
+            // Extrai valor de texto
+            var valor = '';
+            if (length > 0 && length < 512) {
+                if (['OB','OW','SQ','UN'].indexOf(vr) === -1) {
+                    var bytes = new Uint8Array(buffer, pos, length);
+                    valor = String.fromCharCode.apply(null, bytes).replace(/\x00/g, '').trim();
+                }
+            }
+
+            // Captura Transfer Syntax (0002,0010)
+            if (group === 0x0002 && elem === 0x0010 && valor) {
+                transferSyntax = valor;
+                dados['__transferSyntax'] = valor;
+                if (valor === '1.2.840.10008.1.2') {
+                    explicitVR = false; // Implicit VR
+                }
+            }
+
+            // Armazena a tag
+            var key = dcmTagKey(group, elem);
+            if (valor) dados[key] = valor;
+
+            pos += length;
+        } catch(e) { break; }
+    }
+
+    dados['__transferSyntax'] = dados['__transferSyntax'] || transferSyntax;
+    return dados;
+}
+
+function dcmTagKey(group, elem) {
+    var g = ('0000' + group.toString(16)).slice(-4).toUpperCase();
+    var e = ('0000' + elem.toString(16)).slice(-4).toUpperCase();
+    return g + ',' + e;
+}
+
+function dcmGetTag(group, elem) {
+    if (!dcmDados) return '';
+    return dcmDados[dcmTagKey(group, elem)] || '';
+}
+
+function dcmRenderizar(fileName, fileSize) {
+    var el = document.getElementById('dcm_resultado');
+    if (!el) return;
+
+    var cats = {};
+    DICOM_TAGS.forEach(function(t) {
+        var val = dcmGetTag(t.group, t.elem);
+        if (!cats[t.cat]) cats[t.cat] = [];
+        cats[t.cat].push({ nome: t.nome, val: val || '—', isUID: t.cat === 'UIDs' });
+    });
+
+    // Transfer Syntax separado
+    var ts  = dcmDados['__transferSyntax'] || '';
+    var tsInfo = ts ? (DICOM_UID_DICT[ts] || { nome: ts, cat: 'Transfer Syntax', obs: '' }) : null;
+
+    // SOP Class info
+    var sopUID  = dcmGetTag(0x0008, 0x0016);
+    var sopInfo = sopUID ? (DICOM_UID_DICT[sopUID] || null) : null;
+
+    var html = '';
+
+    // Cabeçalho do arquivo
+    html += '<div class="dcm-file-header">' +
+        '<span class="dcm-file-icon">📄</span>' +
+        '<div>' +
+        '<div class="dcm-file-name">' + fileName + '</div>' +
+        '<div class="dcm-file-meta">' + (fileSize / 1024).toFixed(1) + ' KB' +
+        (tsInfo ? ' · <span class="dcm-ts-badge">' + tsInfo.nome + '</span>' : '') +
+        '</div>' +
+        '</div>' +
+        '</div>';
+
+    // Alerta para JPEG 2000
+    if (ts && (ts === '1.2.840.10008.1.2.4.90' || ts === '1.2.840.10008.1.2.4.91')) {
+        html += '<div class="dcm-warn-box">⚠️ Transfer Syntax <strong>JPEG 2000</strong> — metadados lidos normalmente. ' +
+            'Visualização de imagem não suportada sem decoder adicional.</div>';
+    }
+
+    // SOP Class destaque
+    if (sopInfo) {
+        html += '<div class="dcm-sop-box">' +
+            '<span class="dcm-sop-cat">' + sopInfo.cat + '</span>' +
+            '<span class="dcm-sop-nome">' + sopInfo.nome + '</span>' +
+            (sopInfo.obs ? '<span class="dcm-sop-obs">' + sopInfo.obs + '</span>' : '') +
+            '</div>';
+    }
+
+    // Categorias de tags
+    Object.keys(cats).forEach(function(cat) {
+        html += '<div class="dcm-cat-block">' +
+            '<div class="dcm-cat-title">' + cat + '</div>' +
+            '<div class="dcm-tag-list">';
+        cats[cat].forEach(function(t) {
+            var valDisplay = t.val;
+            var extra = '';
+            // Se for UID, mostra descrição se disponível
+            if (t.isUID && t.val !== '—') {
+                var info = DICOM_UID_DICT[t.val];
+                if (info) {
+                    extra = '<span class="dcm-uid-desc">' + info.nome + '</span>';
+                }
+            }
+            html += '<div class="dcm-tag-row">' +
+                '<span class="dcm-tag-nome">' + t.nome + '</span>' +
+                '<span class="dcm-tag-val">' + valDisplay + extra + '</span>' +
+                '</div>';
+        });
+        html += '</div></div>';
+    });
+
+    // Botão exportar JSON
+    html += '<div class="dcm-export-row">' +
+        '<button class="dcm-export-btn" onclick="dcmExportarJSON()">📥 Exportar JSON</button>' +
+        '</div>';
+
+    el.innerHTML = html;
+}
+
+function dcmExportarJSON() {
+    if (!dcmDados) return;
+    var exportData = {};
+    DICOM_TAGS.forEach(function(t) {
+        var val = dcmGetTag(t.group, t.elem);
+        if (val) exportData[t.nome] = val;
+    });
+    exportData['Transfer Syntax'] = dcmDados['__transferSyntax'] || '';
+    var ts = exportData['Transfer Syntax'];
+    if (ts && DICOM_UID_DICT[ts]) exportData['Transfer Syntax Name'] = DICOM_UID_DICT[ts].nome;
+    var blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.href   = url;
+    a.download = 'dicom_metadata_' + new Date().toLocaleDateString('pt-BR').replace(/\//g,'-') + '.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+function dcmLimpar() {
+    dcmDados = null;
+    var el = document.getElementById('dcm_resultado');
+    if (el) el.innerHTML = '';
+    var statusEl = document.getElementById('dcm_status');
+    if (statusEl) { statusEl.textContent = ''; statusEl.className = 'dcm-status'; }
+    var input = document.getElementById('dcm_file_input');
+    if (input) input.value = '';
 }
