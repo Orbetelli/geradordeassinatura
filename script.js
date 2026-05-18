@@ -2434,7 +2434,7 @@ function cechoCopiar(btn, cmd) {
 }
 
 // ========================================
-// DIAGNÓSTICO IA — proxy Vercel → Gemini
+// DIAGNÓSTICO IA — proxy Vercel → Groq
 // ========================================
 
 var IA_SYSTEM_PROMPT = [
@@ -2495,7 +2495,7 @@ function iaEnviar() {
     .catch(function() {
         var loadingEl = document.getElementById('ia-loading-msg');
         if (loadingEl) loadingEl.remove();
-        iaAdicionarMsg('assistant', '⚠️ Erro ao conectar. Verifique se o deploy está atualizado e a GEMINI_API_KEY está configurada no Vercel.');
+        iaAdicionarMsg('assistant', '⚠️ Erro ao conectar. Verifique se o deploy está atualizado e a GROQ_API_KEY está configurada no Vercel.');
     })
     .finally(function() {
         iaCarregando = false;

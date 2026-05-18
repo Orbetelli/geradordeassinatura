@@ -27,61 +27,57 @@ class handler(BaseHTTPRequestHandler):
                 return
 
             # API key via variável de ambiente do Vercel
-            api_key = os.environ.get('GEMINI_API_KEY', '')
+            api_key = os.environ.get('GROQ_API_KEY', '')
             if not api_key:
-                self._erro(500, 'GEMINI_API_KEY não configurada no servidor.')
+                self._erro(500, 'GROQ_API_KEY não configurada no servidor.')
                 return
 
             system_prompt = payload.get('system', '')
 
-            # Converte histórico do formato Anthropic → Gemini
-            # Anthropic: [{ role: 'user'|'assistant', content: '...' }]
-            # Gemini:    [{ role: 'user'|'model',     parts: [{ text: '...' }] }]
-            gemini_contents = []
+            # Groq usa o mesmo formato da OpenAI:
+            # [{ role: 'system'|'user'|'assistant', content: '...' }]
+            groq_messages = []
 
-            # Injeta system prompt como contexto na primeira mensagem do usuário
-            # (compatível com v1 e v1beta sem precisar de systemInstruction)
-            for i, msg in enumerate(messages):
-                role = 'model' if msg.get('role') == 'assistant' else 'user'
-                text = msg.get('content', '')
-                if i == 0 and role == 'user' and system_prompt:
-                    text = system_prompt + '\n\n---\n\n' + text
-                gemini_contents.append({
-                    'role':  role,
-                    'parts': [{ 'text': text }]
+            # System prompt vai como mensagem de role 'system'
+            if system_prompt:
+                groq_messages.append({
+                    'role':    'system',
+                    'content': system_prompt
                 })
 
-            gemini_payload = json.dumps({
-                'contents': gemini_contents,
-                'generationConfig': {
-                    'maxOutputTokens': 1000,
-                    'temperature':     0.7
-                }
+            # Repassa o histórico normalmente (user / assistant)
+            for msg in messages:
+                groq_messages.append({
+                    'role':    msg.get('role', 'user'),
+                    'content': msg.get('content', '')
+                })
+
+            groq_payload = json.dumps({
+                'model':       'llama-3.3-70b-versatile',
+                'messages':    groq_messages,
+                'max_tokens':  1000,
+                'temperature': 0.7
             }).encode('utf-8')
 
-            url = (
-                'https://generativelanguage.googleapis.com/v1beta/models/'
-                'gemini-2.0-flash:generateContent?key=' + api_key
-            )
-
             req = urllib.request.Request(
-                url,
-                data=gemini_payload,
-                headers={ 'Content-Type': 'application/json' },
+                'https://api.groq.com/openai/v1/chat/completions',
+                data=groq_payload,
+                headers={
+                    'Content-Type':  'application/json',
+                    'Authorization': 'Bearer ' + api_key
+                },
                 method='POST'
             )
 
             with urllib.request.urlopen(req, timeout=30) as resp:
                 resp_data = json.loads(resp.read())
 
-            # Extrai o texto da resposta do Gemini e converte para
-            # o formato que o frontend já espera (igual ao da Anthropic)
+            # Extrai o texto e converte para o formato que o frontend já espera
             text = (
                 resp_data
-                .get('candidates', [{}])[0]
-                .get('content', {})
-                .get('parts', [{}])[0]
-                .get('text', 'Sem resposta.')
+                .get('choices', [{}])[0]
+                .get('message', {})
+                .get('content', 'Sem resposta.')
             )
 
             resposta = json.dumps({
