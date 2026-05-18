@@ -38,18 +38,20 @@ class handler(BaseHTTPRequestHandler):
             # Anthropic: [{ role: 'user'|'assistant', content: '...' }]
             # Gemini:    [{ role: 'user'|'model',     parts: [{ text: '...' }] }]
             gemini_contents = []
-            for msg in messages:
+
+            # Injeta system prompt como contexto na primeira mensagem do usuário
+            # (compatível com v1 e v1beta sem precisar de systemInstruction)
+            for i, msg in enumerate(messages):
                 role = 'model' if msg.get('role') == 'assistant' else 'user'
+                text = msg.get('content', '')
+                if i == 0 and role == 'user' and system_prompt:
+                    text = system_prompt + '\n\n---\n\n' + text
                 gemini_contents.append({
                     'role':  role,
-                    'parts': [{ 'text': msg.get('content', '') }]
+                    'parts': [{ 'text': text }]
                 })
 
-            # Gemini recebe o system prompt como systemInstruction separado
             gemini_payload = json.dumps({
-                'systemInstruction': {
-                    'parts': [{ 'text': system_prompt }]
-                },
                 'contents': gemini_contents,
                 'generationConfig': {
                     'maxOutputTokens': 1000,
@@ -58,8 +60,8 @@ class handler(BaseHTTPRequestHandler):
             }).encode('utf-8')
 
             url = (
-                'https://generativelanguage.googleapis.com/v1/models/'
-                'gemini-1.5-flash-latest:generateContent?key=' + api_key
+                'https://generativelanguage.googleapis.com/v1beta/models/'
+                'gemini-1.5-flash:generateContent?key=' + api_key
             )
 
             req = urllib.request.Request(
