@@ -2434,7 +2434,7 @@ function cechoCopiar(btn, cmd) {
 }
 
 // ========================================
-// DIAGNÓSTICO IA — proxy Vercel → Groq
+// DIAGNÓSTICO IA — proxy Vercel → Gemini
 // ========================================
 
 var IA_SYSTEM_PROMPT = [
@@ -2495,7 +2495,7 @@ function iaEnviar() {
     .catch(function() {
         var loadingEl = document.getElementById('ia-loading-msg');
         if (loadingEl) loadingEl.remove();
-        iaAdicionarMsg('assistant', '⚠️ Erro ao conectar. Verifique se o deploy está atualizado e a GROQ_API_KEY está configurada no Vercel.');
+        iaAdicionarMsg('assistant', '⚠️ Erro ao conectar. Verifique se o deploy está atualizado e a GEMINI_API_KEY está configurada no Vercel.');
     })
     .finally(function() {
         iaCarregando = false;
@@ -2588,6 +2588,7 @@ var DICOM_TAGS = [
     { group: 0x0010, elem: 0x0020, nome: 'Patient ID',        cat: 'Paciente' },
     { group: 0x0010, elem: 0x0030, nome: 'Birth Date',        cat: 'Paciente' },
     { group: 0x0010, elem: 0x0040, nome: 'Sex',               cat: 'Paciente' },
+    { group: 0x0010, elem: 0x1000, nome: 'Other Patient IDs',  cat: 'Paciente' },
     // Estudo
     { group: 0x0008, elem: 0x0020, nome: 'Study Date',        cat: 'Estudo' },
     { group: 0x0008, elem: 0x0030, nome: 'Study Time',        cat: 'Estudo' },
@@ -2601,6 +2602,7 @@ var DICOM_TAGS = [
     { group: 0x0008, elem: 0x1010, nome: 'Station Name',      cat: 'Equipamento' },
     { group: 0x0008, elem: 0x0080, nome: 'Institution Name',  cat: 'Equipamento' },
     { group: 0x0008, elem: 0x0055, nome: 'AE Title',          cat: 'Equipamento' },
+    { group: 0x0008, elem: 0x1040, nome: 'Institutional Department', cat: 'Equipamento' },
     // Técnico
     { group: 0x0028, elem: 0x0010, nome: 'Rows',              cat: 'Técnico' },
     { group: 0x0028, elem: 0x0011, nome: 'Columns',           cat: 'Técnico' },
