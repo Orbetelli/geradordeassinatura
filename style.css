@@ -1017,110 +1017,248 @@ body.tema-escuro .storage-btn-open { color: #1a1040; }
     font-weight: 600;
 }
 /* ========================================
-   QUERY BUILDER — INPUT DE LIMITE
+   C-ECHO GENERATOR
    ======================================== */
-.qb-limit-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: 12px;
-    padding: 10px 14px;
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.14);
-    border-radius: 10px;
-}
-.qb-limit-label {
-    font-size: 12px;
-    font-weight: 600;
-    opacity: 0.7;
-    white-space: nowrap;
-}
-.qb-limit-input {
-    width: 90px;
-    background: rgba(255,255,255,0.12);
-    border: 1px solid rgba(255,255,255,0.25);
-    border-radius: 7px;
-    color: white;
-    padding: 5px 10px;
+.cecho-wrap { padding: 4px 0; }
+
+.cecho-info-box {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 12px;
+    padding: 14px 18px;
     font-size: 13px;
-    font-family: 'Segoe UI', sans-serif;
-    outline: none;
-    transition: border-color 0.2s;
-    text-align: center;
+    margin-bottom: 22px;
+    line-height: 1.5;
 }
-.qb-limit-input:focus { border-color: rgba(255,255,255,0.55); }
-.qb-limit-input::placeholder { color: rgba(255,255,255,0.35); }
-.qb-limit-hint {
+
+.cecho-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 24px;
+}
+@media (max-width: 600px) { .cecho-grid { grid-template-columns: 1fr; } }
+
+.cecho-field { display: flex; flex-direction: column; gap: 6px; }
+
+.cecho-label {
     font-size: 11px;
-    opacity: 0.5;
-    font-style: italic;
-}
-
-/* ========================================
-   QUERY BUILDER — RENOMEAR SALVA
-   ======================================== */
-.qb-rename-input {
-    flex: 1;
-    background: rgba(255,255,255,0.12);
-    border: 1px solid rgba(255,255,255,0.35);
-    border-radius: 7px;
-    color: white;
-    padding: 5px 10px;
-    font-size: 13px;
-    font-family: 'Segoe UI', sans-serif;
-    outline: none;
-    transition: border-color 0.2s;
-    min-width: 0;
-}
-.qb-rename-input:focus { border-color: rgba(255,255,255,0.65); }
-.qb-rename-btn-save, .qb-rename-btn-cancel {
-    background: none;
-    border: 1px solid rgba(255,255,255,0.25);
-    border-radius: 6px;
-    color: white;
-    font-size: 13px;
-    cursor: pointer;
-    padding: 4px 9px;
-    transition: background 0.2s;
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-.qb-rename-btn-save  { border-color: rgba(56,239,125,0.5); color: #38ef7d; }
-.qb-rename-btn-save:hover  { background: rgba(56,239,125,0.15); }
-.qb-rename-btn-cancel:hover { background: rgba(255,255,255,0.1); }
-
-/* ========================================
-   GERADOR DE SENHA — FORÇA
-   ======================================== */
-.pw-forca-wrap {
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.7;
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-top: 2px;
 }
-.pw-forca-bar-bg {
-    flex: 1;
-    height: 4px;
-    background: rgba(255,255,255,0.15);
-    border-radius: 4px;
-    overflow: hidden;
+
+.cecho-input {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 9px;
+    color: white;
+    padding: 9px 13px;
+    font-size: 13px;
+    font-family: 'Segoe UI', sans-serif;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
 }
-.pw-forca-bar {
-    height: 100%;
-    border-radius: 4px;
-    transition: width 0.35s ease, background-color 0.35s ease;
-}
-.pw-forca-fraca  { background-color: #e74c3c; }
-.pw-forca-media  { background-color: #f39c12; }
-.pw-forca-forte  { background-color: #38ef7d; }
-.pw-forca-label {
+.cecho-input:focus { border-color: rgba(255,255,255,0.6); }
+.cecho-input::placeholder { color: rgba(255,255,255,0.35); }
+
+.cecho-badge {
     font-size: 10px;
     font-weight: 700;
-    letter-spacing: 0.4px;
-    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 10px;
     white-space: nowrap;
-    flex-shrink: 0;
 }
-.pw-forca-label.pw-forca-fraca { color: #e74c3c; }
-.pw-forca-label.pw-forca-media { color: #f39c12; }
-.pw-forca-label.pw-forca-forte { color: #38ef7d; }
+.cecho-badge-ok   { background: rgba(56,239,125,0.2); color: #38ef7d; border: 1px solid rgba(56,239,125,0.4); }
+.cecho-badge-warn { background: rgba(243,156,18,0.2); color: #f39c12; border: 1px solid rgba(243,156,18,0.4); }
+
+.cecho-results { display: flex; flex-direction: column; gap: 12px; }
+
+.cecho-cmd-card {
+    background: rgba(0,0,0,0.2);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+}
+.cecho-cmd-card:hover { border-color: rgba(255,255,255,0.3); }
+
+.cecho-cmd-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.06);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.cecho-cmd-icon  { font-size: 16px; flex-shrink: 0; }
+.cecho-cmd-label { flex: 1; font-size: 12px; font-weight: 600; opacity: 0.85; }
+
+.cecho-copy-btn {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 7px;
+    color: white;
+    font-size: 12px;
+    padding: 5px 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+    white-space: nowrap;
+    font-family: 'Segoe UI', sans-serif;
+}
+.cecho-copy-btn:hover { background: rgba(255,255,255,0.2); }
+
+.cecho-cmd-code {
+    display: block;
+    font-family: 'Courier New', monospace;
+    font-size: 12.5px;
+    padding: 12px 16px;
+    color: rgba(255,255,255,0.9);
+    white-space: pre-wrap;
+    word-break: break-all;
+    line-height: 1.6;
+}
+
+/* ========================================
+   DIAGNÓSTICO IA
+   ======================================== */
+.ia-wrap { display: flex; flex-direction: column; }
+
+.ia-info-box {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 12px;
+    padding: 14px 18px;
+    font-size: 13px;
+    margin-bottom: 18px;
+    line-height: 1.5;
+}
+
+.ia-messages {
+    min-height: 320px;
+    max-height: 480px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 4px 2px 14px;
+    margin-bottom: 14px;
+    scroll-behavior: smooth;
+}
+.ia-messages::-webkit-scrollbar { width: 4px; }
+.ia-messages::-webkit-scrollbar-track { background: transparent; }
+.ia-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+
+.ia-msg { display: flex; max-width: 90%; }
+.ia-msg-user      { align-self: flex-end; }
+.ia-msg-assistant { align-self: flex-start; }
+
+.ia-msg-content {
+    padding: 12px 16px;
+    border-radius: 14px;
+    font-size: 13px;
+    line-height: 1.65;
+}
+.ia-msg-user .ia-msg-content {
+    background: rgba(17,153,142,0.35);
+    border: 1px solid rgba(17,153,142,0.5);
+    border-bottom-right-radius: 4px;
+}
+.ia-msg-assistant .ia-msg-content {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-bottom-left-radius: 4px;
+}
+
+.ia-code-block {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    overflow-x: auto;
+    margin: 8px 0;
+    white-space: pre;
+}
+.ia-code-inline {
+    background: rgba(0,0,0,0.3);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    border: 1px solid rgba(255,255,255,0.12);
+}
+.ia-list-item { padding: 2px 0 2px 4px; line-height: 1.6; }
+
+.ia-input-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+}
+
+.ia-textarea {
+    flex: 1;
+    background: rgba(255,255,255,0.12);
+    border: 1.5px solid rgba(255,255,255,0.25);
+    border-radius: 12px;
+    color: white;
+    padding: 11px 14px;
+    font-size: 13px;
+    font-family: 'Segoe UI', sans-serif;
+    outline: none;
+    resize: none;
+    line-height: 1.5;
+    transition: border-color 0.2s;
+    min-height: 44px;
+    max-height: 140px;
+    overflow-y: auto;
+}
+.ia-textarea:focus { border-color: rgba(255,255,255,0.55); }
+.ia-textarea::placeholder { color: rgba(255,255,255,0.4); }
+
+.ia-send-btn {
+    background: rgba(17,153,142,0.45);
+    border: 1.5px solid rgba(17,153,142,0.7);
+    border-radius: 12px;
+    color: white;
+    width: 46px;
+    height: 46px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.2s, transform 0.15s;
+}
+.ia-send-btn:hover    { background: rgba(17,153,142,0.7); transform: scale(1.05); }
+.ia-send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+.ia-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
+}
+.ia-clear-btn {
+    background: none;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 8px;
+    color: rgba(255,255,255,0.6);
+    font-size: 12px;
+    padding: 6px 14px;
+    cursor: pointer;
+    font-family: 'Segoe UI', sans-serif;
+    transition: all 0.2s;
+}
+.ia-clear-btn:hover { background: rgba(255,255,255,0.08); color: white; }
+
+@keyframes iaPulse {
+    0%, 100% { opacity: 0.4; }
+    50%       { opacity: 1; }
+}
+#ia-loading-msg .ia-msg-content { animation: iaPulse 1.2s ease-in-out infinite; }

@@ -234,8 +234,7 @@ var QB_SYNTAX = {
         fmtBirthDate:function(col, alias) { return "CONVERT(VARCHAR(10), TRY_CONVERT(DATE, " + col + ", 103), 103) AS " + alias; },
         today:       "CAST(GETDATE() AS DATE)",
         betweenDate: function(col, v1, v2) { return "TRY_CONVERT(DATE, " + col + ", 112) BETWEEN '" + v1 + "' AND '" + v2 + "'"; },
-        datePlaceholder: 'YYYYMMDD',
-        limitTop:    true   // SQL Server usa TOP N antes das colunas
+        datePlaceholder: 'YYYYMMDD'
     },
     mysql: {
         fmtDate:     function(col, alias) { return "DATE_FORMAT(STR_TO_DATE(" + col + ", '%Y%m%d'), '%d/%m/%Y') AS " + alias; },
@@ -243,8 +242,7 @@ var QB_SYNTAX = {
         fmtBirthDate:function(col, alias) { return "DATE_FORMAT(STR_TO_DATE(" + col + ", '%d/%m/%Y'), '%d/%m/%Y') AS " + alias; },
         today:       "CURDATE()",
         betweenDate: function(col, v1, v2) { return "STR_TO_DATE(" + col + ", '%Y%m%d') BETWEEN '" + v1 + "' AND '" + v2 + "'"; },
-        datePlaceholder: 'YYYY-MM-DD',
-        limitTop:    false  // MySQL/Postgres usam LIMIT no final
+        datePlaceholder: 'YYYY-MM-DD'
     },
     postgres: {
         fmtDate:     function(col, alias) { return "TO_CHAR(TO_DATE(" + col + ", 'YYYYMMDD'), 'DD/MM/YYYY') AS " + alias; },
@@ -252,8 +250,7 @@ var QB_SYNTAX = {
         fmtBirthDate:function(col, alias) { return "TO_CHAR(TO_DATE(" + col + ", 'DD/MM/YYYY'), 'DD/MM/YYYY') AS " + alias; },
         today:       "CURRENT_DATE",
         betweenDate: function(col, v1, v2) { return "TO_DATE(" + col + ", 'YYYYMMDD') BETWEEN '" + v1 + "' AND '" + v2 + "'"; },
-        datePlaceholder: 'YYYY-MM-DD',
-        limitTop:    false
+        datePlaceholder: 'YYYY-MM-DD'
     },
     firebird: {
         fmtDate:     function(col, alias) { return "CAST(" + col + " AS DATE) AS " + alias; },
@@ -261,8 +258,7 @@ var QB_SYNTAX = {
         fmtBirthDate:function(col, alias) { return "CAST(" + col + " AS DATE) AS " + alias; },
         today:       "CURRENT_DATE",
         betweenDate: function(col, v1, v2) { return "CAST(" + col + " AS DATE) BETWEEN '" + v1 + "' AND '" + v2 + "'"; },
-        datePlaceholder: 'YYYY-MM-DD',
-        limitTop:    true   // Firebird usa FIRST N (tratado como TOP)
+        datePlaceholder: 'YYYY-MM-DD'
     },
     aws: {
         fmtDate:     function(col, alias) { return "DATE_FORMAT(STR_TO_DATE(" + col + ", '%Y%m%d'), '%d/%m/%Y') AS " + alias; },
@@ -270,8 +266,7 @@ var QB_SYNTAX = {
         fmtBirthDate:function(col, alias) { return "DATE_FORMAT(STR_TO_DATE(" + col + ", '%d/%m/%Y'), '%d/%m/%Y') AS " + alias; },
         today:       "CURDATE()",
         betweenDate: function(col, v1, v2) { return "STR_TO_DATE(" + col + ", '%Y%m%d') BETWEEN '" + v1 + "' AND '" + v2 + "'"; },
-        datePlaceholder: 'YYYY-MM-DD',
-        limitTop:    false
+        datePlaceholder: 'YYYY-MM-DD'
     }
 };
 
@@ -327,8 +322,7 @@ var qbState = {
     db: null,
     view: null,
     selectedFields: [],
-    filters: [],
-    limit: null   // null = sem limite; número = TOP/LIMIT N
+    filters: []
 };
 
 var qbSavedQueries = JSON.parse(localStorage.getItem('mobilemed-qb-saved') || '[]');
@@ -734,6 +728,7 @@ document.addEventListener('DOMContentLoaded', function() {
     planRenderEquips();
     planRenderServidores();
     planRenderUsuarios();
+    cechoGerar();
 });
 
 function setupEventListeners() {
@@ -1225,35 +1220,6 @@ function pwParsearNomes() {
 
 function pwRand(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
 
-// ── Força da senha ─────────────────────
-function pwCalcularForca(senha) {
-    var score = 0;
-    var len = senha.length;
-    if (len >= 8)  score++;
-    if (len >= 12) score++;
-    if (len >= 16) score++;
-    if (/[a-z]/.test(senha)) score++;
-    if (/[A-Z]/.test(senha)) score++;
-    if (/[0-9]/.test(senha)) score++;
-    if (/[@#$%&!]/.test(senha)) score++;
-    if (score <= 3) return { label: 'Fraca',  cls: 'pw-forca-fraca',  pct: 33  };
-    if (score <= 5) return { label: 'Média',  cls: 'pw-forca-media',  pct: 66  };
-    return              { label: 'Forte',  cls: 'pw-forca-forte',  pct: 100 };
-}
-
-function pwRenderForca(containerId, senha) {
-    var el = document.getElementById(containerId);
-    if (!el) return;
-    var f = pwCalcularForca(senha);
-    el.innerHTML =
-        '<div class="pw-forca-wrap">' +
-        '<div class="pw-forca-bar-bg">' +
-        '<div class="pw-forca-bar ' + f.cls + '" style="width:' + f.pct + '%"></div>' +
-        '</div>' +
-        '<span class="pw-forca-label ' + f.cls + '">' + f.label + '</span>' +
-        '</div>';
-}
-
 function pwGerarSenha(len,useSpecial,upperOnly) {
     var lower='abcdefghijklmnopqrstuvwxyz',upper='ABCDEFGHIJKLMNOPQRSTUVWXYZ',digits='0123456789',special='@#$%&!';
     var chars=upperOnly?upper+digits:lower+upper+digits;
@@ -1280,15 +1246,11 @@ function pwGerarSenhas() {
 
     for (var i = 0; i < qty; i++) {
         var senha = prefix + '@' + pwGerarSenha(len, useSpecial, upperOnly);
-        var forcaId = 'pw-forca-' + Date.now() + '-' + i;
         var div   = document.createElement('div');
         div.className = 'pw-password-item';
         div.setAttribute('data-senha', senha);
         div.innerHTML =
-            '<div style="flex:1;min-width:0;">' +
-            '<span style="display:block;margin-bottom:4px;">' + senha + '</span>' +
-            '<div id="' + forcaId + '"></div>' +
-            '</div>' +
+            '<span>' + senha + '</span>' +
             '<button onclick="pwRegenOne(this,\'' + prefix + '\',' + len + ',' + useSpecial + ',' + upperOnly + ')" title="Regerar">' +
             '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
             '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button>' +
@@ -1301,7 +1263,6 @@ function pwGerarSenhas() {
             '<rect x="9" y="9" width="13" height="13" rx="2"/>' +
             '<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>';
         list.appendChild(div);
-        pwRenderForca(forcaId, senha);
     }
 }
 
@@ -1356,21 +1317,12 @@ function pwGeralFeedback(btn, icon) {
 }
 
 function pwRegenOne(btn, prefix, len, useSpecial, upperOnly) {
-    var item  = btn.closest('.pw-password-item');
-    var nova  = prefix + '@' + pwGerarSenha(len, useSpecial, upperOnly);
+    var item = btn.closest('.pw-password-item');
+    var nova = prefix + '@' + pwGerarSenha(len, useSpecial, upperOnly);
     item.querySelector('span').textContent = nova;
-    item.setAttribute('data-senha', nova);
+    item.setAttribute('data-senha', nova); // atualiza data-senha também
     item.style.animation = 'none';
     requestAnimationFrame(function() { item.style.animation = 'fadeIn 0.3s ease'; });
-    // Atualiza indicador de força
-    var forcaEl = item.querySelector('.pw-forca-wrap');
-    if (forcaEl) {
-        var f = pwCalcularForca(nova);
-        forcaEl.querySelector('.pw-forca-bar').className = 'pw-forca-bar ' + f.cls;
-        forcaEl.querySelector('.pw-forca-bar').style.width = f.pct + '%';
-        forcaEl.querySelector('.pw-forca-label').className = 'pw-forca-label ' + f.cls;
-        forcaEl.querySelector('.pw-forca-label').textContent = f.label;
-    }
 }
 
 // Gerador de implantação em lote
@@ -1899,25 +1851,6 @@ function qbInit() {
     qbRenderHistorico();
     qbUpdateSalvasCount();
     qbInitConexao();
-    qbRenderLimitRow();
-}
-
-function qbRenderLimitRow() {
-    // Injeta o controle de limite logo acima da query gerada, no qb-block de QUERY GERADA
-    var preview = document.getElementById('qbPreview');
-    if (!preview) return;
-    var block = preview.closest('.qb-block');
-    if (!block || document.getElementById('qbLimitRow')) return;
-
-    var row = document.createElement('div');
-    row.id = 'qbLimitRow';
-    row.className = 'qb-limit-row';
-    row.innerHTML =
-        '<span class="qb-limit-label">🔢 Limite de linhas</span>' +
-        '<input id="qbLimitInput" class="qb-limit-input" type="number" min="1" placeholder="ex: 100" ' +
-        'oninput="qbSetLimit(this.value)">' +
-        '<span class="qb-limit-hint">vazio = sem limite · TOP para SQL Server/Firebird · LIMIT para MySQL/Postgres</span>';
-    block.insertBefore(row, preview);
 }
 
 // ── Chips de BANCO ─────────────────────
@@ -2077,12 +2010,6 @@ function qbGetToday() {
 }
 
 // ── Gerar Query ────────────────────────
-function qbSetLimit(val) {
-    var n = parseInt(val);
-    qbState.limit = (!val || isNaN(n) || n <= 0) ? null : n;
-    qbGerarQuery();
-}
-
 function qbGerarQuery() {
     var prev = document.getElementById('qbPreview');
     if (!prev) return;
@@ -2100,8 +2027,7 @@ function qbGerarQuery() {
         return;
     }
 
-    var s     = qbSyntax();
-    var limit = qbState.limit;
+    var s = qbSyntax();
 
     var cols = qbState.selectedFields.map(function(id) {
         var f = QB_FIELDS.find(function(x) { return x.id === id; });
@@ -2109,16 +2035,8 @@ function qbGerarQuery() {
         return '    ' + (f.fn ? f.fn(s) : f.col);
     }).filter(Boolean);
 
-    // SQL Server e Firebird: TOP/FIRST antes das colunas
-    var selectClause;
-    if (limit && s.limitTop) {
-        var keyword = (qbState.db === 'firebird') ? 'SELECT FIRST ' + limit : 'SELECT TOP ' + limit;
-        selectClause = keyword + '\n' + cols.join(',\n');
-    } else {
-        selectClause = 'SELECT\n' + cols.join(',\n');
-    }
-
-    var lines = [selectClause];
+    var lines = ['SELECT'];
+    lines.push(cols.join(',\n'));
     lines.push('FROM ' + qbState.view);
 
     var wheres = [];
@@ -2143,14 +2061,8 @@ function qbGerarQuery() {
         lines.push(wheres.join('\n  AND\n'));
     }
 
-    lines.push('ORDER BY ' + (qbState.selectedFields.indexOf('study_date') !== -1 ? 'STUDY_DATE DESC' : '1 ASC'));
+    lines.push('ORDER BY ' + (qbState.selectedFields.indexOf('study_date') !== -1 ? 'STUDY_DATE DESC' : '1 ASC') + ';');
 
-    // MySQL, Postgres e AWS Aurora: LIMIT no final
-    if (limit && !s.limitTop) {
-        lines.push('LIMIT ' + limit);
-    }
-
-    lines.push(';');
     prev.value = lines.join('\n');
 }
 
@@ -2181,9 +2093,6 @@ function qbReset() {
     qbState.view = null;
     qbState.selectedFields = [];
     qbState.filters = [];
-    qbState.limit = null;
-    var limitEl = document.getElementById('qbLimitInput');
-    if (limitEl) limitEl.value = '';
     qbRenderDbChips();
     qbRenderViewChips();
     qbRenderFieldChips();
@@ -2208,55 +2117,17 @@ function qbRenderSalvas() {
         : qbSavedQueries;
 
     el.innerHTML = lista.map(function(q, i) {
-        return '<div class="qb-saved-card" id="qb-saved-card-' + i + '">' +
+        return '<div class="qb-saved-card">' +
             '<div class="qb-saved-header">' +
-            '<div style="min-width:0;flex:1;">' +
-            '<div class="qb-template-title" id="qb-titulo-' + i + '">' + qbEscape(q.titulo) + '</div>' +
-            '<span class="qb-date-badge">' + q.data + '</span>' +
-            '</div>' +
+            '<div><div class="qb-template-title">' + qbEscape(q.titulo) + '</div>' +
+            '<span class="qb-date-badge">' + q.data + '</span></div>' +
             '<div class="qb-template-actions">' +
             '<button class="qb-action-btn" onclick="qbCopiarSalva(' + i + ')">📋 Copiar</button>' +
-            '<button class="qb-action-btn" onclick="qbRenomearSalva(' + i + ')" title="Renomear">✏️</button>' +
             '<button class="qb-action-btn qb-action-danger" onclick="qbRemoverSalva(' + i + ')">🗑️</button>' +
             '</div></div>' +
             '<pre class="qb-code qb-code-preview">' + qbEscape(q.query) + '</pre>' +
             '</div>';
     }).join('');
-}
-
-function qbRenomearSalva(i) {
-    var tituloEl = document.getElementById('qb-titulo-' + i);
-    if (!tituloEl) return;
-
-    var atual = qbSavedQueries[i].titulo;
-
-    tituloEl.innerHTML =
-        '<div style="display:flex;gap:8px;align-items:center;width:100%;">' +
-        '<input id="qb-rename-input-' + i + '" class="qb-rename-input" value="' + qbEscape(atual) + '">' +
-        '<button class="qb-rename-btn-save" onclick="qbSalvarRenome(' + i + ')">✔</button>' +
-        '<button class="qb-rename-btn-cancel" onclick="qbRenderSalvas()">✕</button>' +
-        '</div>';
-
-    var input = document.getElementById('qb-rename-input-' + i);
-    if (input) {
-        input.focus();
-        input.select();
-        input.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter')  qbSalvarRenome(i);
-            if (e.key === 'Escape') qbRenderSalvas();
-        });
-    }
-}
-
-function qbSalvarRenome(i) {
-    var input = document.getElementById('qb-rename-input-' + i);
-    if (!input) return;
-    var novo = input.value.trim();
-    if (!novo) { qbShowToast('O título não pode ficar vazio.'); return; }
-    qbSavedQueries[i].titulo = novo;
-    qbPersistir();
-    qbRenderSalvas();
-    qbShowToast('Renomeado!');
 }
 
 function qbFiltrarSalvas() { qbRenderSalvas(); }
@@ -2497,4 +2368,198 @@ function qbLimparConexao() {
     }
     var el = document.getElementById('qbConnString');
     if (el) el.value = '';
+}
+// ========================================
+// C-ECHO GENERATOR
+// ========================================
+
+var CECHO_AE_REGEX = /^[A-Za-z0-9 _\-\.]+$/;
+
+function cechoValidarAE(inputId, badgeId) {
+    var val = (document.getElementById(inputId) || {}).value || '';
+    var badge = document.getElementById(badgeId);
+    if (!badge) return;
+    if (!val) { badge.textContent = ''; badge.className = 'cecho-badge'; return; }
+    if (val.length > 16) {
+        badge.textContent = '⚠️ máx 16 chars';
+        badge.className = 'cecho-badge cecho-badge-warn';
+    } else if (!CECHO_AE_REGEX.test(val)) {
+        badge.textContent = '⚠️ caractere inválido';
+        badge.className = 'cecho-badge cecho-badge-warn';
+    } else if (val !== val.trim()) {
+        badge.textContent = '⚠️ espaço no início/fim';
+        badge.className = 'cecho-badge cecho-badge-warn';
+    } else {
+        badge.textContent = '✔ válido';
+        badge.className = 'cecho-badge cecho-badge-ok';
+    }
+}
+
+function cechoGerar() {
+    var host = (document.getElementById('cecho_host') || {}).value || '{HOST}';
+    var port = (document.getElementById('cecho_port') || {}).value || '104';
+    var aec  = (document.getElementById('cecho_aec')  || {}).value || '{AE_DESTINO}';
+    var aet  = (document.getElementById('cecho_aet')  || {}).value || 'SUPORTE';
+    var el   = document.getElementById('cecho_results');
+    if (!el) return;
+
+    var cmds = [
+        {
+            label: 'dcm4che (Linux / Windows)',
+            icon: '🔧',
+            cmd: 'storescu -c ' + aec + '@' + host + ':' + port + ' --echo -b ' + aet
+        },
+        {
+            label: 'DCMTK — echoscu (Linux / Windows)',
+            icon: '🛠️',
+            cmd: 'echoscu -aec ' + aec + ' -aet ' + aet + ' ' + host + ' ' + port
+        },
+        {
+            label: 'PowerShell — teste de porta (fallback)',
+            icon: '🪟',
+            cmd: 'Test-NetConnection -ComputerName ' + host + ' -Port ' + port
+        },
+        {
+            label: 'Linux — netcat (teste de porta)',
+            icon: '🐧',
+            cmd: 'nc -zv ' + host + ' ' + port
+        }
+    ];
+
+    el.innerHTML = cmds.map(function(c) {
+        var cmdEsc = c.cmd.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+        return '<div class="cecho-cmd-card">' +
+            '<div class="cecho-cmd-header">' +
+                '<span class="cecho-cmd-icon">' + c.icon + '</span>' +
+                '<span class="cecho-cmd-label">' + c.label + '</span>' +
+                '<button class="cecho-copy-btn" onclick="cechoCopiar(this, \'' + cmdEsc + '\')">📋 Copiar</button>' +
+            '</div>' +
+            '<code class="cecho-cmd-code">' + c.cmd + '</code>' +
+        '</div>';
+    }).join('');
+}
+
+function cechoCopiar(btn, cmd) {
+    var ta = document.createElement('textarea');
+    ta.innerHTML = cmd;
+    navigator.clipboard.writeText(ta.value).then(function() {
+        var orig = btn.innerHTML;
+        btn.innerHTML = '✅ Copiado!';
+        setTimeout(function() { btn.innerHTML = orig; }, 1500);
+    });
+}
+
+// ========================================
+// DIAGNÓSTICO IA
+// ========================================
+
+var IA_SYSTEM_PROMPT = [
+    'Você é um especialista em suporte técnico de sistemas de PACS e telerradiologia da Mobilemed.',
+    'Seu papel é ajudar técnicos de suporte a diagnosticar e resolver problemas rapidamente.',
+    '',
+    'Contexto do ambiente Mobilemed:',
+    '- Sistema PACS: dcm4chee-arc (WildFly/JBoss)',
+    '- Bancos suportados: SQL Server, MySQL, PostgreSQL, Firebird',
+    '- Portas padrão: DICOM 104, Worklist 1105, HTTP 8080, HTTPS 8443',
+    '- Portal de laudos: laudos.mobilemed.com.br',
+    '- Portal vet: portal.mobilemedvet.com.br',
+    '- Routers: Mobilemed Router e Worklist Router (Windows)',
+    '- Acesso remoto: AnyDesk / TeamViewer',
+    '',
+    'Diretrizes de resposta:',
+    '- Seja objetivo e prático — o técnico está em atendimento',
+    '- Estruture respostas com passos numerados quando for diagnóstico',
+    '- Inclua comandos prontos para copiar quando relevante (Windows e Linux)',
+    '- Indique qual banco/OS o comando se aplica quando necessário',
+    '- Se precisar de mais informações para diagnosticar, pergunte de forma direta',
+    '- Priorize as causas mais comuns antes das raras',
+    '- Use linguagem técnica mas clara'
+].join('\n');
+
+var iaHistorico = [];
+var iaCarregando = false;
+
+function iaEnviar() {
+    if (iaCarregando) return;
+    var inputEl = document.getElementById('ia_input');
+    var texto = inputEl ? inputEl.value.trim() : '';
+    if (!texto) return;
+
+    iaAdicionarMsg('user', texto);
+    inputEl.value = '';
+
+    iaHistorico.push({ role: 'user', content: texto });
+
+    iaCarregando = true;
+    var sendBtn = document.getElementById('ia_send_btn');
+    if (sendBtn) sendBtn.disabled = true;
+    iaAdicionarMsg('assistant', '...', 'ia-loading-msg');
+
+    fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 1000,
+            system: IA_SYSTEM_PROMPT,
+            messages: iaHistorico
+        })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        var loadingEl = document.getElementById('ia-loading-msg');
+        if (loadingEl) loadingEl.remove();
+        var resposta = (data.content && data.content[0] && data.content[0].text) || 'Não foi possível obter resposta.';
+        iaAdicionarMsg('assistant', resposta);
+        iaHistorico.push({ role: 'assistant', content: resposta });
+    })
+    .catch(function() {
+        var loadingEl = document.getElementById('ia-loading-msg');
+        if (loadingEl) loadingEl.remove();
+        iaAdicionarMsg('assistant', '⚠️ Erro ao conectar com a IA. Verifique sua conexão e tente novamente.');
+    })
+    .finally(function() {
+        iaCarregando = false;
+        if (sendBtn) sendBtn.disabled = false;
+    });
+}
+
+function iaAdicionarMsg(role, texto, id) {
+    var container = document.getElementById('ia_messages');
+    if (!container) return;
+    var div = document.createElement('div');
+    div.className = 'ia-msg ia-msg-' + role;
+    if (id) div.id = id;
+    var content = document.createElement('div');
+    content.className = 'ia-msg-content';
+    if (role === 'assistant' && texto !== '...') {
+        content.innerHTML = iaFormatarTexto(texto);
+    } else {
+        content.textContent = texto;
+    }
+    div.appendChild(content);
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+}
+
+function iaFormatarTexto(texto) {
+    return texto
+        .replace(/```(\w*)\n?([\s\S]*?)```/g, '<pre class="ia-code-block"><code>$2</code></pre>')
+        .replace(/`([^`]+)`/g, '<code class="ia-code-inline">$1</code>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/^\d+\.\s(.+)$/gm, '<div class="ia-list-item ia-list-num">$1</div>')
+        .replace(/^[•\-]\s(.+)$/gm, '<div class="ia-list-item">• $1</div>')
+        .replace(/\n\n/g, '<br><br>')
+        .replace(/\n/g, '<br>');
+}
+
+function iaLimpar() {
+    iaHistorico = [];
+    var container = document.getElementById('ia_messages');
+    if (!container) return;
+    container.innerHTML =
+        '<div class="ia-msg ia-msg-assistant">' +
+        '<div class="ia-msg-content">Conversa limpa. Pode descrever o novo problema!</div>' +
+        '</div>';
 }
