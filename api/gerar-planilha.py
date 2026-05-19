@@ -5,16 +5,17 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.styles.colors import Color
 
+# Número mínimo de linhas de dados nas abas de tabela
+MIN_ROWS = 10
 
 class handler(BaseHTTPRequestHandler):
 
+    # ── Health check — útil para testar o deploy no Vercel ──
     def do_GET(self):
         result = {}
         try:
-            import openpyxl as ox
-            result['openpyxl'] = ox.__version__
-            from openpyxl.styles import Font, PatternFill
-            wb = ox.Workbook()
+            result['openpyxl'] = openpyxl.__version__
+            wb = openpyxl.Workbook()
             ws = wb.active
             ws['A1'] = 'ok'
             ws['A1'].font = Font(bold=True, color='FFFFFF')
@@ -91,12 +92,12 @@ def sc(ws, r, c, v, font=None, fill=None, align=None, border=None):
 
 def gerar_planilha(data):
 
-    # Paleta de cores (sem prefixo FF — openpyxl aceita RRGGBB)
+    # Paleta de cores (RRGGBB — sem prefixo FF)
     AZUL_ESC  = "1E4D78"   # cabeçalhos principais
     AZUL_MED  = "3C78D8"   # cabeçalho Equipamentos
     AZUL_CLA  = "4A86E8"   # cabeçalho Usuários
     AZUL_DK   = "0B5394"   # cabeçalho "Tipo de Permissionamentos"
-    AZUL_LINK = "0066CC"   # texto "Tipos de Permissões" e título col H
+    AZUL_LINK = "0066CC"   # texto "Tipos de Permissões"
     BRANCO    = "FFFFFF"
     PRETO     = "000000"
 
@@ -108,19 +109,17 @@ def gerar_planilha(data):
     ws1.sheet_view.showGridLines = False
     ws1.sheet_properties.tabColor = Color(rgb="FF0066CC")
 
-    # Larguras de coluna
     for col, w in [("A", 4.86), ("B", 19.29), ("C", 44.14),
                    ("D", 3.71),  ("E", 7.43),  ("F", 3.14),
                    ("G", 27.43), ("H", 35.86), ("I", 3.71)]:
         ws1.column_dimensions[col].width = w
 
-    # Alturas de linha
     ws1.row_dimensions[1].height = 27
     ws1.row_dimensions[2].height = 12
     ws1.row_dimensions[3].height = 27
     for r in range(4, 36):
         ws1.row_dimensions[r].height = 15
-    ws1.row_dimensions[21].height = 14.25  # linha levemente menor (igual ao modelo)
+    ws1.row_dimensions[21].height = 14.25
 
     # ── DADOS CADASTRAIS (B3:C3) ──
     ws1.merge_cells("B3:C3")
@@ -148,14 +147,14 @@ def gerar_planilha(data):
        font=sf(True, BRANCO), fill=pf(AZUL_ESC), align=al())
 
     campos_router_mm = [
-        ("IP:",                         "rmm_ip"),
+        ("IP:",                          "rmm_ip"),
         ("Porta:",                       "rmm_porta"),
         ("E-Title",                      "rmm_etitle"),
-        ("AnyDesk / TeamViewer:",         "rmm_anydesk"),
+        ("AnyDesk / TeamViewer:",        "rmm_anydesk"),
         ("Senha:",                       "rmm_senha"),
         ("Login do Windows",             "rmm_login"),
         ("Senha do Usuário:",            "rmm_senhawin"),
-        ("Localização Física do Router:", "rmm_local"),
+        ("Localização Física do Router:","rmm_local"),
         ("Observações:",                 "rmm_obs"),
     ]
     for i, (label, chave) in enumerate(campos_router_mm, 4):
@@ -167,7 +166,6 @@ def gerar_planilha(data):
     sc(ws1, 15, 2, "INFORMAÇÕES DE SISTEMAS ADICIONAIS",
        font=sf(True, BRANCO), fill=pf(AZUL_ESC), align=al())
 
-    # Perguntas com merges B:C (linhas 16–25, pulando linhas pares para espaço)
     perguntas_sistemas = [
         (16, "1-Utiliza RIS e HIS? Qual?",                                       "rishis"),
         (18, "Se sim, terá integração com nosso sistema?",                       "integ1"),
@@ -203,14 +201,14 @@ def gerar_planilha(data):
        font=sf(True, BRANCO), fill=pf(AZUL_ESC), align=al())
 
     campos_router_wl = [
-        ("IP:",                  "rwl_ip"),
-        ("Porta:",               "rwl_porta"),
-        ("E-Title",              "rwl_etitle"),
+        ("IP:",                   "rwl_ip"),
+        ("Porta:",                "rwl_porta"),
+        ("E-Title",               "rwl_etitle"),
         ("AnyDesk / TeamViewer:", "rwl_anydesk"),
-        ("Senha:",               "rwl_senha"),
-        ("Login do Windows",     "rwl_login"),
-        ("Senha do Usuário:",    "rwl_senhawin"),
-        ("Observações:",         "rwl_obs"),
+        ("Senha:",                "rwl_senha"),
+        ("Login do Windows",      "rwl_login"),
+        ("Senha do Usuário:",     "rwl_senhawin"),
+        ("Observações:",          "rwl_obs"),
     ]
     for i, (label, chave) in enumerate(campos_router_wl, 24):
         sc(ws1, i, 7, label,               font=sf(True,  PRETO), align=al(), border=tb())
@@ -220,6 +218,7 @@ def gerar_planilha(data):
     ws2 = wb.create_sheet("Equipamentos")
     ws2.sheet_view.showGridLines = False
     ws2.sheet_properties.tabColor = Color(rgb="FFFF9900")
+    ws2.freeze_panes = "A2"  # FIX: congela cabeçalho ao rolar
 
     cabecalhos_eq = ["UNIDADE", "MODALIDADE", "MARCA", "MODELO",
                      "IP", "PORTA", "AETITLE", "Localização Física", "Observações"]
@@ -233,7 +232,7 @@ def gerar_planilha(data):
            align=al("center"), border=tb())
 
     equips = data.get("equips", [])
-    total_eq = max(len(equips), 10)
+    total_eq = max(len(equips), MIN_ROWS)
     for i in range(total_eq):
         row = i + 2
         ws2.row_dimensions[row].height = 15
@@ -249,6 +248,7 @@ def gerar_planilha(data):
     ws3 = wb.create_sheet("Servidores")
     ws3.sheet_view.showGridLines = False
     ws3.sheet_properties.tabColor = Color(rgb="FFFF9900")
+    ws3.freeze_panes = "A2"  # FIX: congela cabeçalho ao rolar
 
     cabecalhos_sv = ["Unidade", "Serviços - router ou worklist",
                      "Sistema", "IP", "Acesso Externo SSH / Team",
@@ -263,7 +263,7 @@ def gerar_planilha(data):
            align=al("center"), border=tb())
 
     servidores = data.get("servidores", [])
-    total_sv = max(len(servidores), 10)
+    total_sv = max(len(servidores), MIN_ROWS)
     for i in range(total_sv):
         row = i + 2
         ws3.row_dimensions[row].height = 12.75
@@ -279,6 +279,7 @@ def gerar_planilha(data):
     ws4 = wb.create_sheet("Usuários")
     ws4.sheet_view.showGridLines = False
     ws4.sheet_properties.tabColor = Color(rgb="FFFF0000")
+    ws4.freeze_panes = "A2"  # FIX: congela cabeçalho ao rolar
 
     for col, w in [("A", 27.57), ("B", 30),    ("C", 19.29),
                    ("D", 17.57), ("E", 10.43),  ("F", 6.57),
@@ -294,7 +295,7 @@ def gerar_planilha(data):
            align=al("center"), border=tb())
 
     usuarios = data.get("usuarios", [])
-    total_usr = max(len(usuarios), 10)
+    total_usr = max(len(usuarios), MIN_ROWS)
     for i in range(total_usr):
         row = i + 2
         ws4.row_dimensions[row].height = 15
@@ -305,17 +306,18 @@ def gerar_planilha(data):
             sc(ws4, row, c, v, font=sf(False, PRETO, 10),
                align=al(), border=tb())
 
-    # Coluna H — bloco de permissões (igual ao modelo)
+    # Coluna H — bloco de permissões
     sc(ws4, 1, 8, "TIPOS DE PERMISSIONAMENTOS",
-       font=sf(True, BRANCO, 10), fill=pf(AZUL_DK), align=al("center"))
+       font=sf(True, BRANCO, 10), fill=pf(AZUL_DK),
+       align=al("center"), border=tb())  # FIX: borda adicionada
 
     tipos = ["MEDICO RADIOLOGISTA", "TECNICO", "DIGITADOR",
              "MEDICO SOLICITANTE", "GESTOR", "FINANCEIRO / RELATÓRIOS"]
     for i, p in enumerate(tipos, 2):
         sc(ws4, i, 8, p,
-           font=sf(False, BRANCO, 10), fill=pf(AZUL_ESC), align=al())
+           font=sf(False, BRANCO, 10), fill=pf(AZUL_ESC),
+           align=al(), border=tb())  # FIX: borda adicionada
 
-    # Título das descrições (azul link, sem fundo)
     sc(ws4, 9, 8, "TIPOS DE PERMISSÕES EXISTENTES E SUAS DESCRIÇÕES",
        font=Font(bold=True, color=AZUL_LINK, size=10, name="Calibri"),
        align=al())
@@ -343,7 +345,9 @@ def gerar_planilha(data):
     ws5.sheet_properties.tabColor = Color(rgb="FF000000")
     ws5.column_dimensions["A"].width = 100
 
-    for i, linha in enumerate((data.get("anotacoes", "") or "").split("\n"), 1):
+    # FIX: normaliza \r\n (Windows) para \n antes do split
+    anotacoes = (data.get("anotacoes", "") or "").replace("\r\n", "\n").replace("\r", "\n")
+    for i, linha in enumerate(anotacoes.split("\n"), 1):
         ws5.cell(i, 1, linha).font = sf(False, PRETO)
 
     # ── Serializar e retornar base64 ──────────────────────────────────────────
