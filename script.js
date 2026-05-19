@@ -3017,6 +3017,11 @@ function dcmRenderizar(fileName, fileSize) {
         '</div>';
 
     el.innerHTML = html;
+
+    // Exibe painel de busca e reseta campo
+    var sw = document.getElementById('dcm_search_wrap');
+    if (sw) sw.style.display = 'block';
+    dcmLimparBuscaTags();
 }
 
 function dcmExportarJSON() {
@@ -3045,4 +3050,105 @@ function dcmLimpar() {
     if (statusEl) { statusEl.textContent = ''; statusEl.className = 'dcm-status'; }
     var input = document.getElementById('dcm_file_input');
     if (input) input.value = '';
+    // Esconde e reseta painel de busca
+    var sw = document.getElementById('dcm_search_wrap');
+    if (sw) sw.style.display = 'none';
+    dcmLimparBuscaTags();
+}
+
+// ─── Busca de tags DICOM ──────────────────────────────────────────────────────
+
+function dcmTodasAsTags() {
+    // Retorna array com TODAS as tags lidas do arquivo, não só as pré-definidas
+    if (!dcmDados) return [];
+    var resultado = [];
+    Object.keys(dcmDados).forEach(function(key) {
+        if (key.startsWith('__')) return; // ignora internos
+        var val = dcmDados[key];
+        if (!val) return;
+        // Tenta achar nome amigável nas DICOM_TAGS
+        var partes = key.split(',');
+        var g = parseInt(partes[0], 16);
+        var e = parseInt(partes[1], 16);
+        var tagInfo = DICOM_TAGS.find(function(t) { return t.group === g && t.elem === e; });
+        var nome = tagInfo ? tagInfo.nome : '';
+        // Resolve descrição de UID se disponível
+        var uidInfo = DICOM_UID_DICT[val] || null;
+        resultado.push({
+            key:     key,            // ex: "0010,0010"
+            nome:    nome,           // ex: "Patient Name" (vazio se desconhecido)
+            val:     val,
+            uidInfo: uidInfo
+        });
+    });
+    // Ordena: tags conhecidas primeiro, depois pelo código
+    resultado.sort(function(a, b) {
+        if (a.nome && !b.nome) return -1;
+        if (!a.nome && b.nome) return 1;
+        return a.key.localeCompare(b.key);
+    });
+    return resultado;
+}
+
+function dcmFiltrarTags(q) {
+    var clearBtn = document.getElementById('dcm_search_clear');
+    var countEl  = document.getElementById('dcm_search_count');
+    var resultsEl = document.getElementById('dcm_search_results');
+    if (clearBtn) clearBtn.style.display = q ? 'block' : 'none';
+
+    var todas = dcmTodasAsTags();
+
+    if (!q.trim()) {
+        if (resultsEl) resultsEl.innerHTML = '';
+        if (countEl)  countEl.textContent = todas.length + ' tags no arquivo';
+        return;
+    }
+
+    var lower = q.toLowerCase().trim();
+    var filtrado = todas.filter(function(t) {
+        return t.key.toLowerCase().includes(lower) ||
+               t.nome.toLowerCase().includes(lower) ||
+               t.val.toLowerCase().includes(lower);
+    });
+
+    if (countEl) countEl.textContent = filtrado.length + ' resultado' + (filtrado.length !== 1 ? 's' : '');
+
+    if (!filtrado.length) {
+        resultsEl.innerHTML =
+            '<div style="text-align:center; padding:20px; opacity:0.5;">' +
+            '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display:block;margin:0 auto 8px">' +
+            '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
+            'Nenhuma tag encontrada</div>';
+        return;
+    }
+
+    resultsEl.innerHTML = filtrado.map(function(t) {
+        var nomeHtml = t.nome
+            ? '<span class="dcm-tag-nome">' + t.nome + '</span>'
+            : '<span class="dcm-tag-nome" style="opacity:0.45;">Tag desconhecida</span>';
+        var codeHtml = '<span style="font-family:monospace; font-size:11px; opacity:0.6; margin-left:6px;">(' + t.key + ')</span>';
+        var valHtml  = t.val;
+        var extra    = '';
+        if (t.uidInfo) extra = '<div style="font-size:11px; opacity:0.65; margin-top:2px;">↳ ' + t.uidInfo.nome + (t.uidInfo.obs ? ' — ' + t.uidInfo.obs : '') + '</div>';
+        return '<div class="dcm-tag-row" style="flex-direction:column; align-items:flex-start; gap:2px; padding:8px 10px;">' +
+            '<div style="display:flex; align-items:center; width:100%; gap:4px;">' +
+            nomeHtml + codeHtml +
+            '<span class="dcm-tag-val" style="margin-left:auto; text-align:right; max-width:55%; word-break:break-all;">' + valHtml + '</span>' +
+            '</div>' + extra +
+            '</div>';
+    }).join('');
+}
+
+function dcmLimparBuscaTags() {
+    var inp = document.getElementById('dcm_search_input');
+    if (inp) inp.value = '';
+    var clearBtn = document.getElementById('dcm_search_clear');
+    if (clearBtn) clearBtn.style.display = 'none';
+    var resultsEl = document.getElementById('dcm_search_results');
+    if (resultsEl) resultsEl.innerHTML = '';
+    var countEl = document.getElementById('dcm_search_count');
+    if (countEl) {
+        var todas = dcmTodasAsTags();
+        countEl.textContent = todas.length ? todas.length + ' tags no arquivo' : '';
+    }
 }

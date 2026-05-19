@@ -619,6 +619,25 @@
                 <input type="file" id="dcm_file_input" accept=".dcm,.DCM" style="display:none;" onchange="dcmLerArquivo(this)">
                 <div id="dcm_status" class="dcm-status"></div>
                 <div id="dcm_resultado"></div>
+
+                <!-- Busca de tags — aparece após carregar arquivo -->
+                <div id="dcm_search_wrap" style="display:none; margin-top:18px;">
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+                        <div style="position:relative; flex:1;">
+                            <input id="dcm_search_input" type="text"
+                                placeholder="🔍 Buscar tag por nome ou código (ex: Patient Name ou 0010,0010)..."
+                                oninput="dcmFiltrarTags(this.value)"
+                                style="width:100%; background:rgba(255,255,255,0.13); color:white;
+                                       border:1px solid rgba(255,255,255,0.3); border-radius:10px;
+                                       padding:10px 36px 10px 14px; font-size:13px; outline:none; box-sizing:border-box;">
+                            <button id="dcm_search_clear" onclick="dcmLimparBuscaTags()"
+                                style="display:none; position:absolute; right:10px; top:50%; transform:translateY(-50%);
+                                       background:none; border:none; color:white; cursor:pointer; font-size:16px; opacity:0.6;">✕</button>
+                        </div>
+                        <span id="dcm_search_count" style="font-size:12px; opacity:0.6; white-space:nowrap;"></span>
+                    </div>
+                    <div id="dcm_search_results"></div>
+                </div>
             </div>
         </div><!-- fim suporte-panel-dicom -->
 
