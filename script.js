@@ -1118,6 +1118,17 @@ function processImageAndDraw(src,fc,ctx,name,crm) {
     fc.style.display='block';
 }
 
+// ── Estado do drag & drop das assinaturas duplas ──
+var dragState = {
+    active: false,
+    which: null,       // 1 ou 2
+    offsetX: 0, offsetY: 0
+};
+var sig1Pos = null;    // { x, y, w, h } — posição atual da assinatura 1
+var sig2Pos = null;    // { x, y, w, h } — posição atual da assinatura 2
+var doubleCtx = null;  // contexto salvo para redesenho
+var doubleData = null; // dados salvos para redesenho
+
 function processDoubleImages(s1,s2,fc,ctx,n1,c1) {
     var mk=function(img){
         var tc=document.createElement('canvas'),tctx=tc.getContext('2d',{alpha:true,willReadFrequently:true});
@@ -1127,7 +1138,6 @@ function processDoubleImages(s1,s2,fc,ctx,n1,c1) {
     var pc1=mk(s1),pc2=mk(s2),W=fc.width,H=fc.height,mW=Math.floor(240*sigScale2),mH=Math.floor(50*sigScale2);
     var r1=Math.min(mW/pc1.width,mH/pc1.height,1),nW1=Math.floor(pc1.width*r1),nH1=Math.floor(pc1.height*r1);
     var r2=Math.min(mW/pc2.width,mH/pc2.height,1),nW2=Math.floor(pc2.width*r2),nH2=Math.floor(pc2.height*r2);
-    ctx.font='bold 11px "'+getSelectedFont()+'"'; ctx.fillStyle='black'; ctx.textAlign='center';
     var n2=document.getElementById('doctorName2').value.trim();
     var c2=document.getElementById('doctorCRM2').value.trim();
     var addX=document.getElementById('addExtraPhrase').checked;
@@ -1136,14 +1146,124 @@ function processDoubleImages(s1,s2,fc,ctx,n1,c1) {
     var t1=buildSignatureText(n1,c1,professionState[1].register,e1,'');
     var t2=buildSignatureText(n2,c2,professionState[2].register,e2,'');
     var l1=t1.split('\n'),l2=t2.split('\n'),mg=5;
-    var hC1=nH1+mg+l1.length*13,yS1=Math.floor((H-hC1)/2),xC1=W/4;
-    var hC2=nH2+mg+l2.length*13,yS2=Math.floor((H-hC2)/2),xC2=(W*3)/4;
-    ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
-    ctx.drawImage(pc1,0,0,pc1.width,pc1.height,Math.floor(xC1-nW1/2),yS1,nW1,nH1);
-    l1.forEach(function(l,i){ctx.fillText(l,xC1,yS1+nH1+mg+11+(i*13));});
-    ctx.drawImage(pc2,0,0,pc2.width,pc2.height,Math.floor(xC2-nW2/2),yS2,nW2,nH2);
-    l2.forEach(function(l,i){ctx.fillText(l,xC2,yS2+nH2+mg+11+(i*13));});
+    var hC1=nH1+mg+l1.length*13,hC2=nH2+mg+l2.length*13;
+
+    // Posição inicial: distribui as duas com espaço proporcional ao tamanho real
+    var totalW = nW1 + nW2;
+    var gap    = Math.floor((W - totalW) / 3);
+    var x1 = gap;
+    var x2 = gap + nW1 + gap;
+
+    sig1Pos = { x: x1, y: Math.floor((H-hC1)/2), w: nW1, h: nH1, lines: l1, mg: mg };
+    sig2Pos = { x: x2, y: Math.floor((H-hC2)/2), w: nW2, h: nH2, lines: l2, mg: mg };
+
+    // Salva contexto e canvases processados para redesenho no drag
+    doubleCtx = ctx;
+    doubleData = { fc: fc, pc1: pc1, pc2: pc2, W: W, H: H, font: getSelectedFont() };
+
+    drawDoubleCanvas();
     fc.style.display='block';
+
+    // Mostra hint de drag
+    var hint = document.getElementById('canvasDragHint');
+    if (hint) hint.style.display = 'block';
+
+    // Registra eventos de drag (remove anteriores para não duplicar)
+    fc.onmousedown  = onSigMouseDown;
+    fc.onmousemove  = onSigMouseMove;
+    fc.onmouseup    = onSigMouseUp;
+    fc.onmouseleave = onSigMouseUp;
+    // Touch (mobile)
+    fc.ontouchstart = onSigTouchStart;
+    fc.ontouchmove  = onSigTouchMove;
+    fc.ontouchend   = onSigMouseUp;
+}
+
+function drawDoubleCanvas() {
+    if (!doubleCtx || !doubleData || !sig1Pos || !sig2Pos) return;
+    var ctx=doubleCtx, d=doubleData, W=d.W, H=d.H;
+    var p1=sig1Pos, p2=sig2Pos;
+
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle='white'; ctx.fillRect(0,0,W,H);
+    ctx.font='bold 11px "'+d.font+'"'; ctx.fillStyle='black'; ctx.textAlign='center';
+    ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
+
+    // Assinatura 1
+    ctx.drawImage(d.pc1,0,0,d.pc1.width,d.pc1.height, p1.x, p1.y, p1.w, p1.h);
+    p1.lines.forEach(function(l,i){ ctx.fillText(l, p1.x+p1.w/2, p1.y+p1.h+p1.mg+11+(i*13)); });
+
+    // Assinatura 2
+    ctx.drawImage(d.pc2,0,0,d.pc2.width,d.pc2.height, p2.x, p2.y, p2.w, p2.h);
+    p2.lines.forEach(function(l,i){ ctx.fillText(l, p2.x+p2.w/2, p2.y+p2.h+p2.mg+11+(i*13)); });
+}
+
+function getSigAtPoint(x, y) {
+    // Retorna qual assinatura foi clicada (considera imagem + texto abaixo)
+    function hits(p) {
+        var textH = p.lines.length * 13 + p.mg + 15;
+        return x >= p.x && x <= p.x + p.w && y >= p.y && y <= p.y + p.h + textH;
+    }
+    if (sig1Pos && hits(sig1Pos)) return 1;
+    if (sig2Pos && hits(sig2Pos)) return 2;
+    return null;
+}
+
+function getCanvasXY(fc, e) {
+    var rect = fc.getBoundingClientRect();
+    var scaleX = fc.width  / rect.width;
+    var scaleY = fc.height / rect.height;
+    return {
+        x: (e.clientX - rect.left) * scaleX,
+        y: (e.clientY - rect.top)  * scaleY
+    };
+}
+
+function onSigMouseDown(e) {
+    var pt = getCanvasXY(this, e);
+    var which = getSigAtPoint(pt.x, pt.y);
+    if (!which) return;
+    var pos = which === 1 ? sig1Pos : sig2Pos;
+    dragState.active  = true;
+    dragState.which   = which;
+    dragState.offsetX = pt.x - pos.x;
+    dragState.offsetY = pt.y - pos.y;
+    this.style.cursor = 'grabbing';
+    e.preventDefault();
+}
+
+function onSigMouseMove(e) {
+    if (!dragState.active) {
+        // Muda cursor ao passar sobre assinatura
+        var pt = getCanvasXY(this, e);
+        this.style.cursor = getSigAtPoint(pt.x, pt.y) ? 'grab' : 'default';
+        return;
+    }
+    var pt = getCanvasXY(this, e);
+    var pos = dragState.which === 1 ? sig1Pos : sig2Pos;
+    var W = doubleData ? doubleData.W : 600;
+    var H = doubleData ? doubleData.H : 120;
+    // Limita dentro do canvas
+    pos.x = Math.max(0, Math.min(W - pos.w, pt.x - dragState.offsetX));
+    pos.y = Math.max(0, Math.min(H - pos.h - pos.lines.length*13 - pos.mg - 5, pt.y - dragState.offsetY));
+    drawDoubleCanvas();
+    e.preventDefault();
+}
+
+function onSigMouseUp() {
+    dragState.active = false;
+    dragState.which  = null;
+    if (this && this.style) this.style.cursor = 'grab';
+}
+
+function onSigTouchStart(e) {
+    if (e.touches.length !== 1) return;
+    onSigMouseDown.call(this, e.touches[0]);
+}
+
+function onSigTouchMove(e) {
+    if (e.touches.length !== 1) return;
+    onSigMouseMove.call(this, e.touches[0]);
 }
 
 function sigRegenIfReady() {
@@ -1158,6 +1278,8 @@ function sigRegenIfReady() {
         if (!uploadedImage2) return;
         if (!document.getElementById('doctorName2').value.trim()) return;
         if (!document.getElementById('doctorCRM2').value.trim()) return;
+        // Reseta posições ao redigitar para recalcular layout
+        sig1Pos = null; sig2Pos = null;
         createDoubleSignature(name, crm);
     } else {
         createFinalSignature(name, crm);

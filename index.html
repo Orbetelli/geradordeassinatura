@@ -251,7 +251,10 @@
 
             <!-- Canvas de preview -->
             <div class="preview-section">
-                <canvas id="previewCanvas" width="600" height="120"></canvas>
+                <div id="canvasDragHint" style="display:none; text-align:center; font-size:12px; opacity:0.7; margin-bottom:6px;">
+                    🖱️ Arraste cada assinatura para reposicionar
+                </div>
+                <canvas id="previewCanvas" width="600" height="120" style="cursor:grab;"></canvas>
             </div>
 
         </div><!-- fim geral-panel-assinatura -->
