@@ -195,6 +195,27 @@ var professionState = {
     2: { type: 'medico', register: 'CRM' }
 };
 
+// Flag: segunda assinatura em modo "modelo pronto"
+var sig2ModoModelo = false;
+
+function toggleSig2Modo(on) {
+    sig2ModoModelo = on;
+    var campos = document.getElementById('sig2CamposNormais');
+    var hint   = document.getElementById('sig2ModeloHint');
+    var label  = document.getElementById('fileInput2Label');
+    if (campos) campos.style.display = on ? 'none' : 'block';
+    if (hint)   hint.style.display   = on ? 'block' : 'none';
+    if (label)  label.textContent    = on ? '📁 Selecionar Modelo Pronto (PNG)' : '📁 Selecionar Segunda Assinatura';
+    // Limpa campos de nome/CRM para não influenciar validação
+    if (on) {
+        var n2 = document.getElementById('doctorName2');
+        var c2 = document.getElementById('doctorCRM2');
+        if (n2) n2.value = '';
+        if (c2) c2.value = '';
+    }
+    sigRegenIfReady();
+}
+
 function selectProfession(doctorIndex, btn) {
     professionState[doctorIndex].type     = btn.dataset.type;
     professionState[doctorIndex].register = btn.dataset.register;
@@ -778,6 +799,11 @@ function setupEventListeners() {
             sel2.querySelectorAll('.profession-btn').forEach(function(b) { b.classList.remove('active'); });
             sel2.querySelector('[data-type="medico"]').classList.add('active');
             updateRegisterField(2, 'CRM');
+            // Reseta modo modelo pronto
+            sig2ModoModelo = false;
+            var cb = document.getElementById('sig2ModeloPronto');
+            if (cb) cb.checked = false;
+            toggleSig2Modo(false);
         }
     });
 
@@ -1067,7 +1093,12 @@ function generateSignature() {
     var has2=document.getElementById('enableSecondSignature').checked;
     if (has2) {
         if (!uploadedImage2) { showMessage('Selecione a segunda imagem!','error'); return; }
-        if (!document.getElementById('doctorName2').value.trim()||!document.getElementById('doctorCRM2').value.trim()) { showMessage('Preencha dados da segunda assinatura!','error'); return; }
+        // No modo modelo pronto, nome e CRM são opcionais
+        if (!sig2ModoModelo) {
+            if (!document.getElementById('doctorName2').value.trim()||!document.getElementById('doctorCRM2').value.trim()) {
+                showMessage('Preencha dados da segunda assinatura!','error'); return;
+            }
+        }
     }
     var loading=document.getElementById('loading'), btn=document.getElementById('generateBtn');
     loading.style.display='block'; document.getElementById('loadingText').textContent='Gerando...'; btn.disabled=true;
@@ -1144,9 +1175,10 @@ function processDoubleImages(s1,s2,fc,ctx,n1,c1) {
     var e1=addX?document.getElementById('extraPhrase').value.trim():'';
     var e2=addX?document.getElementById('extraPhrase2').value.trim():'';
     var t1=buildSignatureText(n1,c1,professionState[1].register,e1,'');
-    var t2=buildSignatureText(n2,c2,professionState[2].register,e2,'');
-    var l1=t1.split('\n'),l2=t2.split('\n'),mg=5;
-    var hC1=nH1+mg+l1.length*13,hC2=nH2+mg+l2.length*13;
+    // No modo modelo pronto a segunda assinatura não tem texto abaixo
+    var t2 = sig2ModoModelo ? '' : buildSignatureText(n2,c2,professionState[2].register,e2,'');
+    var l1=t1.split('\n'), l2= sig2ModoModelo ? [] : t2.split('\n'), mg=5;
+    var hC1=nH1+mg+l1.length*13, hC2=nH2+(sig2ModoModelo?0:mg+l2.length*13);
 
     // Posição inicial: distribui as duas com espaço proporcional ao tamanho real
     var totalW = nW1 + nW2;
@@ -1280,6 +1312,11 @@ function sigRegenIfReady() {
         if (!document.getElementById('doctorCRM2').value.trim()) return;
         // Reseta posições ao redigitar para recalcular layout
         sig1Pos = null; sig2Pos = null;
+        // No modo modelo pronto não exige nome/CRM da segunda assinatura
+        if (!sig2ModoModelo) {
+            if (!document.getElementById('doctorName2').value.trim()) return;
+            if (!document.getElementById('doctorCRM2').value.trim()) return;
+        }
         createDoubleSignature(name, crm);
     } else {
         createFinalSignature(name, crm);

@@ -168,9 +168,17 @@
             <div id="doctor2Section" class="hidden">
                 <h3 style="margin-bottom: 15px;">👨‍⚕️ Segunda Assinatura (Direita)</h3>
 
+                <!-- Toggle: modo normal vs modelo pronto -->
+                <div class="checkbox-group" style="margin-bottom: 18px;">
+                    <input type="checkbox" id="sig2ModeloPronto" onchange="toggleSig2Modo(this.checked)">
+                    <label for="sig2ModeloPronto" style="margin-bottom: 0;">
+                        ⚡ Inserir modelo pronto (PNG já processado — sem nome/CRM)
+                    </label>
+                </div>
+
                 <div class="upload-section" style="margin-bottom: 20px;">
                     <div class="file-input-wrapper">
-                        <label for="fileInput2" class="file-input-label">📁 Selecionar Segunda Assinatura</label>
+                        <label for="fileInput2" class="file-input-label" id="fileInput2Label">📁 Selecionar Segunda Assinatura</label>
                         <input type="file" id="fileInput2" accept="image/*">
                     </div>
                     <div id="fileName2" style="text-align: center; margin-top: 10px;"></div>
@@ -182,24 +190,29 @@
                             🎨 Remover Fundo (Assinatura 2)
                         </button>
                     </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Tipo de Profissional:</label>
-                    <div class="profession-selector" id="professionSelector2">
-                        <button type="button" class="profession-btn active" data-type="medico" data-register="CRM" onclick="selectProfession(2, this)">🩺 Médico</button>
-                        <button type="button" class="profession-btn" data-type="veterinario" data-register="CRMV" onclick="selectProfession(2, this)">🐾 Veterinário</button>
+                    <!-- Hint modo pronto -->
+                    <div id="sig2ModeloHint" style="display:none; text-align:center; margin-top:10px; font-size:12px; opacity:0.75;">
+                        💡 Modelo pronto: a imagem será inserida diretamente no canvas sem texto abaixo. Filtros opcionais disponíveis.
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="doctorName2">Nome do Profissional (com título):</label>
-                    <input type="text" id="doctorName2" placeholder="Ex: Dr. Maria Costa">
-                </div>
-
-                <div class="form-group">
-                    <label for="doctorCRM2" id="doctorCRM2Label">CRM com Estado:</label>
-                    <input type="text" id="doctorCRM2" placeholder="Ex: CRM 67890/SP">
+                <!-- Campos nome/CRM (ocultos no modo modelo pronto) -->
+                <div id="sig2CamposNormais">
+                    <div class="form-group">
+                        <label>Tipo de Profissional:</label>
+                        <div class="profession-selector" id="professionSelector2">
+                            <button type="button" class="profession-btn active" data-type="medico" data-register="CRM" onclick="selectProfession(2, this)">🩺 Médico</button>
+                            <button type="button" class="profession-btn" data-type="veterinario" data-register="CRMV" onclick="selectProfession(2, this)">🐾 Veterinário</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="doctorName2">Nome do Profissional (com título):</label>
+                        <input type="text" id="doctorName2" placeholder="Ex: Dr. Maria Costa">
+                    </div>
+                    <div class="form-group">
+                        <label for="doctorCRM2" id="doctorCRM2Label">CRM com Estado:</label>
+                        <input type="text" id="doctorCRM2" placeholder="Ex: CRM 67890/SP">
+                    </div>
                 </div>
             </div>
 
