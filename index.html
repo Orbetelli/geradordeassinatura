@@ -267,7 +267,17 @@
                 <div id="canvasDragHint" style="display:none; text-align:center; font-size:12px; opacity:0.7; margin-bottom:6px;">
                     🖱️ Arraste cada assinatura para reposicionar
                 </div>
-                <canvas id="previewCanvas" width="600" height="120" style="cursor:grab;"></canvas>
+                <div id="sig_undoredo_wrap" style="display:none; justify-content:center; gap:8px; margin-bottom:8px;">
+                    <button id="sig_undo_btn" onclick="dragDesfazer()" disabled
+                        style="background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.25); color:white;
+                               border-radius:8px; padding:5px 14px; cursor:pointer; font-size:13px;"
+                        title="Desfazer último movimento (Ctrl+Z)">↩️ Desfazer</button>
+                    <button id="sig_redo_btn" onclick="dragRefazer()" disabled
+                        style="background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.25); color:white;
+                               border-radius:8px; padding:5px 14px; cursor:pointer; font-size:13px;"
+                        title="Refazer (Ctrl+Y)">↪️ Refazer</button>
+                </div>
+                <canvas id="previewCanvas" width="420" height="120" style="cursor:grab;"></canvas>
             </div>
 
         </div><!-- fim geral-panel-assinatura -->
@@ -637,6 +647,33 @@
                         <span id="dcm_search_count" style="font-size:12px; opacity:0.6; white-space:nowrap;"></span>
                     </div>
                     <div id="dcm_search_results"></div>
+                </div>
+                <!-- Comparação de dois arquivos DICOM -->
+                <div id="dcm_comp_section" style="margin-top:24px; display:none;">
+                    <div style="font-weight:600; font-size:14px; margin-bottom:12px;">🔀 Comparar com outro arquivo .dcm</div>
+                    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+                        <label style="background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.25);
+                                      color:white; border-radius:8px; padding:7px 14px; cursor:pointer; font-size:13px;">
+                            📂 Selecionar arquivo 2
+                            <input type="file" id="dcm_comp_file_input" accept=".dcm,.DCM" style="display:none;"
+                                onchange="dcmLerArquivo2(this)">
+                        </label>
+                        <span id="dcm_comp_status" style="font-size:12px; opacity:0.65;"></span>
+                        <button id="dcm_comp_btn" onclick="dcmComparar()" disabled
+                            style="background:rgba(250,204,21,0.18); border:1px solid rgba(250,204,21,0.4);
+                                   color:white; border-radius:8px; padding:7px 16px; cursor:pointer; font-size:13px; margin-left:auto;">
+                            🔀 Comparar
+                        </button>
+                        <button onclick="dcmLimparComparacao()"
+                            style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2);
+                                   color:white; border-radius:8px; padding:7px 12px; cursor:pointer; font-size:13px;">
+                            ✕ Limpar
+                        </button>
+                    </div>
+                    <div id="dcm_comp_wrap" style="display:none;">
+                        <div id="dcm_comp_resumo" style="margin-bottom:10px; font-size:13px;"></div>
+                        <div id="dcm_comp_resultado"></div>
+                    </div>
                 </div>
             </div>
         </div><!-- fim suporte-panel-dicom -->

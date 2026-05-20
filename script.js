@@ -78,7 +78,17 @@ function alternarTema() {
     var salvo = localStorage.getItem('mobilemed-tema');
     if (salvo === 'escuro') {
         document.body.classList.add('tema-escuro');
-        document.addEventListener('DOMContentLoaded', function() {
+        // Atalhos de teclado Ctrl+Z / Ctrl+Y para undo/redo da assinatura dupla
+window.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        if (sig1Pos && sig2Pos) { dragDesfazer(); e.preventDefault(); }
+    }
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        if (sig1Pos && sig2Pos) { dragRefazer(); e.preventDefault(); }
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
             var label = document.getElementById('temaLabel');
             var icon  = document.querySelector('.tema-icon');
             if (label) label.textContent = 'Tema Escuro';
@@ -799,6 +809,10 @@ function setupEventListeners() {
             sel2.querySelectorAll('.profession-btn').forEach(function(b) { b.classList.remove('active'); });
             sel2.querySelector('[data-type="medico"]').classList.add('active');
             updateRegisterField(2, 'CRM');
+            // Esconde undo/redo
+            var undoWrap = document.getElementById('sig_undoredo_wrap');
+            if (undoWrap) undoWrap.style.display = 'none';
+            dragResetarHistorico();
             // Reseta modo modelo pronto
             sig2ModoModelo = false;
             var cb = document.getElementById('sig2ModeloPronto');
@@ -1112,7 +1126,7 @@ function generateSignature() {
 
 function createFinalSignature(name,crm) {
     var fc=document.getElementById('previewCanvas'), ctx=fc.getContext('2d',{alpha:true});
-    fc.width=600; fc.height=120; ctx.fillStyle='white'; ctx.fillRect(0,0,600,120);
+    fc.width=420; fc.height=120; ctx.fillStyle='white'; ctx.fillRect(0,0,420,120);
     var img=new Image();
     img.onload=function(){processImageAndDraw(img,fc,ctx,name,crm);};
     img.src=document.getElementById('imagePreview').src;
@@ -1160,6 +1174,62 @@ var sig2Pos = null;    // { x, y, w, h } — posição atual da assinatura 2
 var doubleCtx = null;  // contexto salvo para redesenho
 var doubleData = null; // dados salvos para redesenho
 
+// ── Histórico de undo/redo (posições do drag) ──
+var dragHistorico  = [];   // pilha de estados anteriores
+var dragFuturo     = [];   // pilha de estados desfeitos (redo)
+var DRAG_MAX_HIST  = 20;   // limite de histórico
+
+function dragSalvarEstado() {
+    if (!sig1Pos || !sig2Pos) return;
+    dragHistorico.push({
+        s1: { x: sig1Pos.x, y: sig1Pos.y },
+        s2: { x: sig2Pos.x, y: sig2Pos.y }
+    });
+    if (dragHistorico.length > DRAG_MAX_HIST) dragHistorico.shift();
+    dragFuturo = []; // limpa redo ao fazer nova ação
+    dragAtualizarBotoes();
+}
+
+function dragDesfazer() {
+    if (!dragHistorico.length || !sig1Pos || !sig2Pos) return;
+    // Salva estado atual no futuro antes de desfazer
+    dragFuturo.push({
+        s1: { x: sig1Pos.x, y: sig1Pos.y },
+        s2: { x: sig2Pos.x, y: sig2Pos.y }
+    });
+    var anterior = dragHistorico.pop();
+    sig1Pos.x = anterior.s1.x; sig1Pos.y = anterior.s1.y;
+    sig2Pos.x = anterior.s2.x; sig2Pos.y = anterior.s2.y;
+    drawDoubleCanvas();
+    dragAtualizarBotoes();
+}
+
+function dragRefazer() {
+    if (!dragFuturo.length || !sig1Pos || !sig2Pos) return;
+    dragHistorico.push({
+        s1: { x: sig1Pos.x, y: sig1Pos.y },
+        s2: { x: sig2Pos.x, y: sig2Pos.y }
+    });
+    var proximo = dragFuturo.pop();
+    sig1Pos.x = proximo.s1.x; sig1Pos.y = proximo.s1.y;
+    sig2Pos.x = proximo.s2.x; sig2Pos.y = proximo.s2.y;
+    drawDoubleCanvas();
+    dragAtualizarBotoes();
+}
+
+function dragAtualizarBotoes() {
+    var btnU = document.getElementById('sig_undo_btn');
+    var btnR = document.getElementById('sig_redo_btn');
+    if (btnU) btnU.disabled = dragHistorico.length === 0;
+    if (btnR) btnR.disabled = dragFuturo.length === 0;
+}
+
+function dragResetarHistorico() {
+    dragHistorico = [];
+    dragFuturo    = [];
+    dragAtualizarBotoes();
+}
+
 function processDoubleImages(s1,s2,fc,ctx,n1,c1) {
     var mk=function(img){
         var tc=document.createElement('canvas'),tctx=tc.getContext('2d',{alpha:true,willReadFrequently:true});
@@ -1199,6 +1269,11 @@ function processDoubleImages(s1,s2,fc,ctx,n1,c1) {
     // Mostra hint de drag
     var hint = document.getElementById('canvasDragHint');
     if (hint) hint.style.display = 'block';
+
+    // Mostra botões undo/redo e reseta histórico
+    var undoWrap = document.getElementById('sig_undoredo_wrap');
+    if (undoWrap) undoWrap.style.display = 'flex';
+    dragResetarHistorico();
 
     // Registra eventos de drag (remove anteriores para não duplicar)
     fc.onmousedown  = onSigMouseDown;
@@ -1283,6 +1358,7 @@ function onSigMouseMove(e) {
 }
 
 function onSigMouseUp() {
+    if (dragState.active) dragSalvarEstado(); // salva posição ao soltar
     dragState.active = false;
     dragState.which  = null;
     if (this && this.style) this.style.cursor = 'grab';
@@ -2597,8 +2673,8 @@ function cechoCopiar(btn, cmd) {
 // ========================================
 
 var IA_SYSTEM_PROMPT = [
-    'Você é um assistente especializado EXCLUSIVAMENTE em suporte técnico de sistemas de PACS e telerradiologia da Mobilemed.',
-    'Seu papel é ajudar técnicos de suporte a diagnosticar e resolver problemas técnicos rapidamente.',
+    'Você é um especialista em suporte técnico de sistemas de PACS e telerradiologia da Mobilemed.',
+    'Seu papel é ajudar técnicos de suporte a diagnosticar e resolver problemas rapidamente.',
     '',
     'Contexto do ambiente Mobilemed:',
     '- Sistema PACS: dcm4chee-arc (WildFly/JBoss)',
@@ -2609,32 +2685,11 @@ var IA_SYSTEM_PROMPT = [
     '- Routers: Mobilemed Router e Worklist Router (Windows)',
     '- Acesso remoto: AnyDesk / TeamViewer',
     '',
-    'Escopo permitido — responda APENAS perguntas sobre:',
-    '- Problemas de conectividade DICOM (C-ECHO, C-STORE, C-FIND, C-MOVE)',
-    '- Worklist vazia ou com erro',
-    '- Imagens não chegando no PACS',
-    '- Erros no portal de laudos (login, laudo, visualização)',
-    '- Configuração de equipamentos (CR, CT, MR, US, DR)',
-    '- Banco de dados (conexão, lentidão, erros)',
-    '- Rede e firewall (portas, IP, DNS, roteamento)',
-    '- Routers Mobilemed (instalação, configuração, logs)',
-    '- Acesso remoto via AnyDesk / TeamViewer',
-    '- Logs do sistema (WildFly, Windows Event Viewer, dcm4chee)',
-    '- Erros HTTP do portal (500, 403, 404, timeout)',
-    '',
-    'Restrições — recuse educadamente qualquer pergunta fora do escopo acima, como:',
-    '- Assuntos médicos, diagnósticos clínicos ou laudos',
-    '- Desenvolvimento de software, programação geral',
-    '- Assuntos pessoais, entretenimento, notícias',
-    '- Qualquer tema não relacionado a suporte técnico Mobilemed',
-    '- Ao recusar, responda exatamente: "⚠️ Essa pergunta está fora do escopo do suporte técnico Mobilemed. Posso ajudar com problemas de PACS, worklist, portal de laudos, rede ou equipamentos."',
-    '',
     'Diretrizes:',
     '- Seja objetivo e prático — o técnico está em atendimento',
     '- Estruture respostas com passos numerados quando for diagnóstico',
     '- Inclua comandos prontos para copiar quando relevante',
-    '- Priorize as causas mais comuns antes das raras',
-    '- Nunca invente informações — se não souber, diga que não sabe'
+    '- Priorize as causas mais comuns antes das raras'
 ].join('\n');
 
 var iaHistorico  = [];
@@ -3043,6 +3098,13 @@ function dcmRenderizar(fileName, fileSize) {
     var sw = document.getElementById('dcm_search_wrap');
     if (sw) sw.style.display = 'block';
     dcmLimparBuscaTags();
+
+    // Exibe painel de comparação
+    var compSection = document.getElementById('dcm_comp_section');
+    if (compSection) compSection.style.display = 'block';
+    // Habilita botão de comparar se arquivo 2 já estiver carregado
+    var btnComp = document.getElementById('dcm_comp_btn');
+    if (btnComp) btnComp.disabled = !dcmDados2;
 }
 
 function dcmExportarJSON() {
@@ -3075,6 +3137,10 @@ function dcmLimpar() {
     var sw = document.getElementById('dcm_search_wrap');
     if (sw) sw.style.display = 'none';
     dcmLimparBuscaTags();
+    // Esconde painel de comparação
+    var compSection = document.getElementById('dcm_comp_section');
+    if (compSection) compSection.style.display = 'none';
+    dcmLimparComparacao();
 }
 
 // ─── Busca de tags DICOM ──────────────────────────────────────────────────────
@@ -3172,4 +3238,130 @@ function dcmLimparBuscaTags() {
         var todas = dcmTodasAsTags();
         countEl.textContent = todas.length ? todas.length + ' tags no arquivo' : '';
     }
+}
+
+// ─── Comparação de dois arquivos DICOM ───────────────────────────────────────
+
+var dcmDados2 = null; // segundo arquivo carregado para comparação
+
+function dcmLerArquivo2(input) {
+    var file = input.files ? input.files[0] : null;
+    if (!file) return;
+    var statusEl = document.getElementById('dcm_comp_status');
+    if (statusEl) statusEl.textContent = 'Carregando ' + file.name + '...';
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        dcmDados2 = dcmParsear(e.target.result);
+        if (statusEl) statusEl.textContent = '✅ ' + file.name + ' carregado';
+        // Habilita botão de comparar se os dois arquivos estão prontos
+        var btnComp = document.getElementById('dcm_comp_btn');
+        if (btnComp) btnComp.disabled = !dcmDados || !dcmDados2;
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function dcmComparar() {
+    if (!dcmDados || !dcmDados2) return;
+
+    // Coleta todas as keys dos dois arquivos
+    var todasKeys = new Set(
+        Object.keys(dcmDados).concat(Object.keys(dcmDados2))
+            .filter(function(k) { return !k.startsWith('__'); })
+    );
+
+    var iguais = 0, diferentes = 0, apenasA = 0, apenasB = 0;
+    var rows = [];
+
+    todasKeys.forEach(function(key) {
+        var valA = dcmDados[key]  || '';
+        var valB = dcmDados2[key] || '';
+
+        var partes  = key.split(',');
+        var g       = parseInt(partes[0], 16);
+        var e       = parseInt(partes[1], 16);
+        var tagInfo = DICOM_TAGS.find(function(t) { return t.group === g && t.elem === e; });
+        var nome    = tagInfo ? tagInfo.nome : '';
+
+        var status;
+        if      (!valA)        { status = 'apenas-b'; apenasB++; }
+        else if (!valB)        { status = 'apenas-a'; apenasA++; }
+        else if (valA === valB){ status = 'igual';    iguais++;  }
+        else                   { status = 'diferente';diferentes++; }
+
+        rows.push({ key: key, nome: nome, valA: valA, valB: valB, status: status });
+    });
+
+    // Ordena: diferentes primeiro, depois apenas-a/b, por último iguais
+    var ordem = { 'diferente': 0, 'apenas-a': 1, 'apenas-b': 1, 'igual': 2 };
+    rows.sort(function(a, b) {
+        if (ordem[a.status] !== ordem[b.status]) return ordem[a.status] - ordem[b.status];
+        return a.key.localeCompare(b.key);
+    });
+
+    // Resumo
+    var resumo = document.getElementById('dcm_comp_resumo');
+    if (resumo) {
+        resumo.innerHTML =
+            '<span style="color:#facc15; font-weight:600;">⚠️ ' + diferentes + ' diferentes</span> &nbsp;|&nbsp; ' +
+            '<span style="opacity:0.7;">📄 ' + apenasA + ' só no arquivo 1</span> &nbsp;|&nbsp; ' +
+            '<span style="opacity:0.7;">📄 ' + apenasB + ' só no arquivo 2</span> &nbsp;|&nbsp; ' +
+            '<span style="opacity:0.5;">✅ ' + iguais + ' iguais</span>';
+    }
+
+    // Tabela de resultados
+    var el = document.getElementById('dcm_comp_resultado');
+    if (!el) return;
+
+    var html = '<div style="overflow-x:auto;">';
+    html += '<table style="width:100%; border-collapse:collapse; font-size:12px;">';
+    html += '<thead><tr>' +
+        '<th style="text-align:left; padding:8px 10px; border-bottom:1px solid rgba(255,255,255,0.15); opacity:0.7;">Tag</th>' +
+        '<th style="text-align:left; padding:8px 10px; border-bottom:1px solid rgba(255,255,255,0.15); opacity:0.7;">Arquivo 1</th>' +
+        '<th style="text-align:left; padding:8px 10px; border-bottom:1px solid rgba(255,255,255,0.15); opacity:0.7;">Arquivo 2</th>' +
+        '</tr></thead><tbody>';
+
+    rows.forEach(function(r) {
+        var highlight = r.status === 'diferente'
+            ? 'background:rgba(250,204,21,0.12); border-left:3px solid #facc15;'
+            : r.status !== 'igual'
+            ? 'background:rgba(255,255,255,0.04); border-left:3px solid rgba(255,255,255,0.2);'
+            : '';
+        var nomeHtml = r.nome
+            ? '<span style="font-weight:600;">' + r.nome + '</span><br><span style="opacity:0.5; font-family:monospace;">(' + r.key + ')</span>'
+            : '<span style="font-family:monospace; opacity:0.6;">' + r.key + '</span>';
+        var valAHtml = r.valA
+            ? '<span' + (r.status === 'diferente' ? ' style="color:#facc15;"' : '') + '>' + r.valA + '</span>'
+            : '<span style="opacity:0.3;">—</span>';
+        var valBHtml = r.valB
+            ? '<span' + (r.status === 'diferente' ? ' style="color:#facc15;"' : '') + '>' + r.valB + '</span>'
+            : '<span style="opacity:0.3;">—</span>';
+        html += '<tr style="' + highlight + '">' +
+            '<td style="padding:7px 10px; border-bottom:1px solid rgba(255,255,255,0.06);">' + nomeHtml + '</td>' +
+            '<td style="padding:7px 10px; border-bottom:1px solid rgba(255,255,255,0.06); word-break:break-all;">' + valAHtml + '</td>' +
+            '<td style="padding:7px 10px; border-bottom:1px solid rgba(255,255,255,0.06); word-break:break-all;">' + valBHtml + '</td>' +
+            '</tr>';
+    });
+
+    html += '</tbody></table></div>';
+    el.innerHTML = html;
+
+    // Exibe o painel
+    var wrap = document.getElementById('dcm_comp_wrap');
+    if (wrap) wrap.style.display = 'block';
+}
+
+function dcmLimparComparacao() {
+    dcmDados2 = null;
+    var el = document.getElementById('dcm_comp_resultado');
+    if (el) el.innerHTML = '';
+    var resumo = document.getElementById('dcm_comp_resumo');
+    if (resumo) resumo.innerHTML = '';
+    var statusEl = document.getElementById('dcm_comp_status');
+    if (statusEl) statusEl.textContent = '';
+    var inp = document.getElementById('dcm_comp_file_input');
+    if (inp) inp.value = '';
+    var wrap = document.getElementById('dcm_comp_wrap');
+    if (wrap) wrap.style.display = 'none';
+    var btnComp = document.getElementById('dcm_comp_btn');
+    if (btnComp) btnComp.disabled = true;
 }
