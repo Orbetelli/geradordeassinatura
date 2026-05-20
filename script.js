@@ -1126,7 +1126,7 @@ function generateSignature() {
 
 function createFinalSignature(name,crm) {
     var fc=document.getElementById('previewCanvas'), ctx=fc.getContext('2d',{alpha:true});
-    fc.width=420; fc.height=120; ctx.fillStyle='white'; ctx.fillRect(0,0,420,120);
+    fc.width=600; fc.height=120; ctx.fillStyle='white'; ctx.fillRect(0,0,600,120);
     var img=new Image();
     img.onload=function(){processImageAndDraw(img,fc,ctx,name,crm);};
     img.src=document.getElementById('imagePreview').src;
