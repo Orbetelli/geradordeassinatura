@@ -78,7 +78,16 @@ function alternarTema() {
     var salvo = localStorage.getItem('mobilemed-tema');
     if (salvo === 'escuro') {
         document.body.classList.add('tema-escuro');
-        // Atalhos de teclado Ctrl+Z / Ctrl+Y para undo/redo da assinatura dupla
+        document.addEventListener('DOMContentLoaded', function() {
+            var label = document.getElementById('temaLabel');
+            var icon  = document.querySelector('.tema-icon');
+            if (label) label.textContent = 'Tema Escuro';
+            if (icon)  icon.textContent  = '🌙';
+        });
+    }
+})();
+
+// Atalhos de teclado Ctrl+Z / Ctrl+Y para undo/redo da assinatura dupla
 window.addEventListener('keydown', function(e) {
     if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
         if (sig1Pos && sig2Pos) { dragDesfazer(); e.preventDefault(); }
@@ -87,15 +96,6 @@ window.addEventListener('keydown', function(e) {
         if (sig1Pos && sig2Pos) { dragRefazer(); e.preventDefault(); }
     }
 });
-
-document.addEventListener('DOMContentLoaded', function() {
-            var label = document.getElementById('temaLabel');
-            var icon  = document.querySelector('.tema-icon');
-            if (label) label.textContent = 'Tema Escuro';
-            if (icon)  icon.textContent  = '🌙';
-        });
-    }
-})();
 
 // ========================================
 // SISTEMA DE ABAS PRINCIPAIS
@@ -2730,7 +2730,7 @@ function iaEnviar() {
     .catch(function() {
         var loadingEl = document.getElementById('ia-loading-msg');
         if (loadingEl) loadingEl.remove();
-        iaAdicionarMsg('assistant', '⚠️ Erro ao conectar. Verifique se o deploy está atualizado e a GEMINI_API_KEY está configurada no Vercel.');
+        iaAdicionarMsg('assistant', '⚠️ Erro ao conectar. Verifique se o deploy está atualizado e a GROQ_API_KEY está configurada no Vercel.');
     })
     .finally(function() {
         iaCarregando = false;
