@@ -878,7 +878,12 @@ function showMessage(text, type) {
     setTimeout(function() { container.innerHTML = ''; }, 5000);
 }
 
-function removeBgHelper(img, onDone) {
+// ── Dados brutos para o slider de threshold ──────────────────────────────────
+// Armazena lums e bgLum de cada imagem para reaplicar threshold sem reprocessar
+var bgRawData1 = null; // { lums, bgLum, origData, W, H }
+var bgRawData2 = null;
+
+function removeBgHelper(img, onDone, onRawReady) {
     var canvas = document.createElement('canvas');
     var ctx    = canvas.getContext('2d', { willReadFrequently: true });
     canvas.width = img.width; canvas.height = img.height;
@@ -886,23 +891,100 @@ function removeBgHelper(img, onDone) {
     var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     var data = imageData.data;
     var W = canvas.width, H = canvas.height;
-    var corners = [
-        { r: data[0],                 g: data[1],                 b: data[2] },
-        { r: data[(W-1)*4],           g: data[(W-1)*4+1],         b: data[(W-1)*4+2] },
-        { r: data[((H-1)*W)*4],       g: data[((H-1)*W)*4+1],     b: data[((H-1)*W)*4+2] },
-        { r: data[((H-1)*W+W-1)*4],   g: data[((H-1)*W+W-1)*4+1], b: data[((H-1)*W+W-1)*4+2] }
-    ];
-    var bgR = Math.round((corners[0].r+corners[1].r+corners[2].r+corners[3].r)/4);
-    var bgG = Math.round((corners[0].g+corners[1].g+corners[2].g+corners[3].g)/4);
-    var bgB = Math.round((corners[0].b+corners[1].b+corners[2].b+corners[3].b)/4);
-    for (var i = 0; i < data.length; i += 4) {
-        var diff = Math.sqrt(Math.pow(data[i]-bgR,2)+Math.pow(data[i+1]-bgG,2)+Math.pow(data[i+2]-bgB,2));
-        if (diff < 80) data[i+3] = 0;
+    var total = W * H;
+
+    // ── 1. Luminância perceptual de cada pixel (BT.601) ──────────────────────
+    var lums = new Uint8Array(total);
+    for (var i = 0; i < total; i++) {
+        lums[i] = Math.round(0.299 * data[i*4] + 0.587 * data[i*4+1] + 0.114 * data[i*4+2]);
     }
+
+    // ── 2. Moda do histograma = cor do fundo ─────────────────────────────────
+    var hist = new Int32Array(256);
+    for (var i = 0; i < total; i++) hist[lums[i]]++;
+    var histSmooth = new Float32Array(256);
+    for (var v = 0; v < 256; v++) {
+        var soma = 0, cnt = 0;
+        for (var k = -2; k <= 2; k++) {
+            var idx = v + k;
+            if (idx >= 0 && idx < 256) { soma += hist[idx]; cnt++; }
+        }
+        histSmooth[v] = soma / cnt;
+    }
+    var bgLum = 0, maxFreq = 0;
+    for (var v = 0; v < 256; v++) {
+        if (histSmooth[v] > maxFreq) { maxFreq = histSmooth[v]; bgLum = v; }
+    }
+
+    // ── 3. Threshold automático (usado na primeira passada) ──────────────────
+    var fundoEscuro = bgLum < 128;
+    var inkLum = bgLum;
+    if (fundoEscuro) {
+        for (var v = 255; v > bgLum; v--) { if (hist[v] > total * 0.005) { inkLum = v; break; } }
+    } else {
+        for (var v = 0; v < bgLum; v++) { if (hist[v] > total * 0.005) { inkLum = v; break; } }
+    }
+    var range = Math.abs(bgLum - inkLum);
+    var autoThreshold = Math.min(100, Math.max(12, Math.round(range * 0.35)));
+
+    // ── 4. Salva dados originais (RGB) para o slider poder reaplicar ─────────
+    var origData = new Uint8ClampedArray(data);
+    if (onRawReady) onRawReady({ lums: lums, bgLum: bgLum, origData: origData, W: W, H: H, canvas: canvas, ctx: ctx });
+
+    // ── 5. Aplica threshold automático na primeira vez ───────────────────────
+    bgAplicarThreshold(data, lums, bgLum, autoThreshold);
+
     ctx.putImageData(imageData, 0, 0);
     var url    = canvas.toDataURL('image/png');
     var newImg = new Image();
-    newImg.onload = function() { onDone(newImg, url); };
+    newImg.onload = function() { onDone(newImg, url, autoThreshold); };
+    newImg.src = url;
+}
+
+// Aplica um threshold específico nos dados de pixel
+function bgAplicarThreshold(data, lums, bgLum, threshold) {
+    var fadeZone = Math.max(6, Math.round(threshold * 0.25));
+    var total = lums.length;
+    for (var i = 0; i < total; i++) {
+        var diff = Math.abs(lums[i] - bgLum);
+        if (diff <= threshold) {
+            data[i*4+3] = 0;
+        } else if (diff <= threshold + fadeZone) {
+            var t = (diff - threshold) / fadeZone;
+            data[i*4+3] = Math.round(t * 255);
+        } else {
+            data[i*4+3] = 255;
+        }
+    }
+}
+
+// Reaplicar threshold quando o slider é movido
+function bgThresholdAtualizar(sig) {
+    var raw       = sig === 1 ? bgRawData1 : bgRawData2;
+    var sliderId  = sig === 1 ? 'bgThreshold'       : 'bgThreshold2';
+    var labelId   = sig === 1 ? 'bgThresholdValue'  : 'bgThresholdValue2';
+    var previewId = sig === 1 ? 'imagePreview'      : 'imagePreview2';
+    if (!raw) return;
+
+    var threshold = parseInt(document.getElementById(sliderId).value);
+    document.getElementById(labelId).textContent = threshold;
+
+    // Restaura dados originais e reaaplica novo threshold
+    var newData = new Uint8ClampedArray(raw.origData);
+    bgAplicarThreshold(newData, raw.lums, raw.bgLum, threshold);
+
+    var imageData = new ImageData(newData, raw.W, raw.H);
+    raw.ctx.putImageData(imageData, 0, 0);
+    var url = raw.canvas.toDataURL('image/png');
+
+    document.getElementById(previewId).src = url;
+
+    // Atualiza a imagem processada em memória
+    var newImg = new Image();
+    newImg.onload = function() {
+        if (sig === 1) { processedImage = uploadedImage = newImg; }
+        else           { processedImage2 = uploadedImage2 = newImg; }
+    };
     newImg.src = url;
 }
 
@@ -917,15 +999,26 @@ function removeBackground() {
     document.getElementById('progressText').textContent = 'Removendo fundo...';
     bar.style.width = '50%'; pct.textContent = '50%';
     try {
-        removeBgHelper(uploadedImage, function(newImg, url) {
-            processedImage = uploadedImage = newImg;
-            document.getElementById('imagePreview').src = url;
-            document.getElementById('adjustmentSection').classList.remove('hidden');
-            prog.classList.add('hidden');
-            bar.style.width = '0%'; pct.textContent = '0%';
-            showMessage('Fundo removido!', 'success');
-            btn.disabled = false;
-        });
+        removeBgHelper(uploadedImage,
+            function(newImg, url, autoThreshold) {
+                processedImage = uploadedImage = newImg;
+                document.getElementById('imagePreview').src = url;
+                document.getElementById('adjustmentSection').classList.remove('hidden');
+                // Mostra e inicializa o slider
+                var sec = document.getElementById('bgThresholdSection');
+                if (sec) {
+                    sec.classList.remove('hidden');
+                    var sl = document.getElementById('bgThreshold');
+                    sl.value = autoThreshold;
+                    document.getElementById('bgThresholdValue').textContent = autoThreshold;
+                }
+                prog.classList.add('hidden');
+                bar.style.width = '0%'; pct.textContent = '0%';
+                showMessage('Fundo removido! Use o slider para ajustar.', 'success');
+                btn.disabled = false;
+            },
+            function(raw) { bgRawData1 = raw; }
+        );
     } catch(e) {
         prog.classList.add('hidden');
         showMessage('Erro: ' + e.message, 'error');
@@ -944,20 +1037,33 @@ function removeBackground2() {
     document.getElementById('progressText').textContent = 'Removendo fundo da segunda assinatura...';
     bar.style.width = '50%'; pct.textContent = '50%';
     try {
-        removeBgHelper(uploadedImage2, function(newImg, url) {
-            processedImage2 = uploadedImage2 = newImg;
-            document.getElementById('imagePreview2').src = url;
-            prog.classList.add('hidden');
-            bar.style.width = '0%'; pct.textContent = '0%';
-            showMessage('Fundo da segunda assinatura removido!', 'success');
-            btn.disabled = false;
-        });
+        removeBgHelper(uploadedImage2,
+            function(newImg, url, autoThreshold) {
+                processedImage2 = uploadedImage2 = newImg;
+                document.getElementById('imagePreview2').src = url;
+                // Mostra e inicializa o slider
+                var sec = document.getElementById('bgThresholdSection2');
+                if (sec) {
+                    sec.classList.remove('hidden');
+                    var sl = document.getElementById('bgThreshold2');
+                    sl.value = autoThreshold;
+                    document.getElementById('bgThresholdValue2').textContent = autoThreshold;
+                }
+                prog.classList.add('hidden');
+                bar.style.width = '0%'; pct.textContent = '0%';
+                showMessage('Fundo da segunda assinatura removido!', 'success');
+                btn.disabled = false;
+            },
+            function(raw) { bgRawData2 = raw; }
+        );
     } catch(e) {
         prog.classList.add('hidden');
         showMessage('Erro: ' + e.message, 'error');
         btn.disabled = false;
     }
 }
+
+
 
 function resetAdjustments() {
     adjustments = { contrast:200, sharpness:0, convertToBlack:false, cleanWeakPixels:false, autoCrop:false, applyPythonFilters:false };
@@ -998,18 +1104,15 @@ function applyFiltersPreview() {
 }
 
 function applyThreshold(imageData, threshold) {
-    // Converte pixels escuros (abaixo do threshold) para preto puro, mantendo transparência
+    // Elimina pixels RGB claros que ainda têm alpha > 0 (resíduos do fundo)
+    // Usa luminância do RGB: se o pixel é claro E tem alpha baixo → transparente
     var data = imageData.data;
     threshold = threshold || 180;
     for (var i = 0; i < data.length; i += 4) {
-        if (data[i+3] === 0) continue; // ignora transparente
-        var brilho = (data[i] * 0.299 + data[i+1] * 0.587 + data[i+2] * 0.114);
-        if (brilho < threshold) {
-            // escuro — força preto
-            data[i] = 0; data[i+1] = 0; data[i+2] = 0;
-        } else {
-            // claro — força transparente
-            data[i+3] = 0;
+        if (data[i+3] === 0) continue;
+        var brilho = data[i] * 0.299 + data[i+1] * 0.587 + data[i+2] * 0.114;
+        if (brilho >= threshold) {
+            data[i+3] = 0; // pixel claro → transparente
         }
     }
     return imageData;
@@ -1018,76 +1121,126 @@ function applyThreshold(imageData, threshold) {
 function applyContrast(imageData, contrastValue) {
     var data = imageData.data, factor = contrastValue / 100;
     for (var i = 0; i < data.length; i += 4) {
-        data[i]   = Math.max(0,Math.min(255,((data[i]  -128)*factor)+128));
-        data[i+1] = Math.max(0,Math.min(255,((data[i+1]-128)*factor)+128));
-        data[i+2] = Math.max(0,Math.min(255,((data[i+2]-128)*factor)+128));
+        if (data[i+3] === 0) continue;
+        data[i]   = Math.max(0, Math.min(255, ((data[i]   - 128) * factor) + 128));
+        data[i+1] = Math.max(0, Math.min(255, ((data[i+1] - 128) * factor) + 128));
+        data[i+2] = Math.max(0, Math.min(255, ((data[i+2] - 128) * factor) + 128));
     }
     return imageData;
 }
 
 function applySharpness(canvas, sharpnessValue) {
     if (sharpnessValue === 0) return canvas;
-    var ctx = canvas.getContext('2d',{willReadFrequently:true}), W=canvas.width, H=canvas.height;
-    var orig = ctx.getImageData(0,0,W,H);
-    var blur = document.createElement('canvas'); blur.width=W; blur.height=H;
+    var ctx = canvas.getContext('2d', { willReadFrequently: true }), W = canvas.width, H = canvas.height;
+    var orig = ctx.getImageData(0, 0, W, H);
+    var blur = document.createElement('canvas'); blur.width = W; blur.height = H;
     var bctx = blur.getContext('2d');
     bctx.filter = 'blur(' + (sharpnessValue > 10 ? '2px' : '1px') + ')';
-    bctx.drawImage(canvas,0,0); bctx.filter = 'none';
-    var blurData = bctx.getImageData(0,0,W,H), amt = sharpnessValue/3;
+    bctx.drawImage(canvas, 0, 0); bctx.filter = 'none';
+    var blurData = bctx.getImageData(0, 0, W, H), amt = sharpnessValue / 3;
     for (var i = 0; i < orig.data.length; i += 4)
         for (var j = 0; j < 3; j++)
-            orig.data[i+j] = Math.max(0,Math.min(255, orig.data[i+j]+(orig.data[i+j]-blurData.data[i+j])*amt));
-    ctx.putImageData(orig,0,0);
+            orig.data[i+j] = Math.max(0, Math.min(255, orig.data[i+j] + (orig.data[i+j] - blurData.data[i+j]) * amt));
+    ctx.putImageData(orig, 0, 0);
     return canvas;
+}
+
+// Amplifica o canal alpha dos pixels semi-transparentes da tinta
+// Ex: pixel com alpha=60 (traço claro/fino) → alpha=255 (totalmente opaco)
+// Essencial para assinaturas coloridas claras (roxo, azul claro, etc)
+function boostAlpha(imageData) {
+    var data = imageData.data;
+    for (var i = 0; i < data.length; i += 4) {
+        if (data[i+3] === 0) continue;
+        // Amplifica: qualquer pixel com algum alpha vira totalmente opaco
+        // Faz isso antes do convertToBlack para não perder traços finos
+        data[i+3] = 255;
+    }
+    return imageData;
 }
 
 function convertToBlackPure(imageData) {
     var data = imageData.data;
-    for (var i = 0; i < data.length; i+=4)
-        if (data[i+3]>0) { data[i]=0; data[i+1]=0; data[i+2]=0; }
+    for (var i = 0; i < data.length; i += 4)
+        if (data[i+3] > 0) { data[i] = 0; data[i+1] = 0; data[i+2] = 0; }
     return imageData;
 }
 
 function cleanWeakPixelsFn(imageData, threshold) {
-    threshold = threshold||15;
+    threshold = threshold || 15;
     var data = imageData.data;
-    for (var i=0; i<data.length; i+=4) if (data[i+3]<threshold) data[i+3]=0;
+    for (var i = 0; i < data.length; i += 4) if (data[i+3] < threshold) data[i+3] = 0;
     return imageData;
 }
 
 function autoCropCanvas(canvas, margin) {
-    margin = margin||15;
-    var ctx=canvas.getContext('2d',{willReadFrequently:true}), W=canvas.width, H=canvas.height;
-    var data=ctx.getImageData(0,0,W,H).data;
-    var minX=W,minY=H,maxX=0,maxY=0,has=false;
-    for (var y=0;y<H;y++) for (var x=0;x<W;x++) if (data[(y*W+x)*4+3]>0) {
-        has=true;
-        if(x<minX)minX=x; if(x>maxX)maxX=x;
-        if(y<minY)minY=y; if(y>maxY)maxY=y;
+    margin = margin || 15;
+    var ctx = canvas.getContext('2d', { willReadFrequently: true }), W = canvas.width, H = canvas.height;
+    var data = ctx.getImageData(0, 0, W, H).data;
+    var minX = W, minY = H, maxX = 0, maxY = 0, has = false;
+    for (var y = 0; y < H; y++) for (var x = 0; x < W; x++) if (data[(y * W + x) * 4 + 3] > 0) {
+        has = true;
+        if (x < minX) minX = x; if (x > maxX) maxX = x;
+        if (y < minY) minY = y; if (y > maxY) maxY = y;
     }
     if (!has) return canvas;
-    minX=Math.max(0,minX-margin); minY=Math.max(0,minY-margin);
-    maxX=Math.min(W-1,maxX+margin); maxY=Math.min(H-1,maxY+margin);
-    var cW=maxX-minX+1, cH=maxY-minY+1;
-    var cc=document.createElement('canvas'); cc.width=cW; cc.height=cH;
-    cc.getContext('2d').drawImage(canvas,minX,minY,cW,cH,0,0,cW,cH);
+    minX = Math.max(0, minX - margin); minY = Math.max(0, minY - margin);
+    maxX = Math.min(W - 1, maxX + margin); maxY = Math.min(H - 1, maxY + margin);
+    var cW = maxX - minX + 1, cH = maxY - minY + 1;
+    var cc = document.createElement('canvas'); cc.width = cW; cc.height = cH;
+    cc.getContext('2d').drawImage(canvas, minX, minY, cW, cH, 0, 0, cW, cH);
     return cc;
 }
 
 function applyAllFilters(canvas, ctx) {
-    var imageData = ctx.getImageData(0,0,canvas.width,canvas.height);
+    var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
     if (adjustments.applyPythonFilters) {
-        imageData=applyContrast(imageData,400); ctx.putImageData(imageData,0,0); applySharpness(canvas,15);
-        imageData=ctx.getImageData(0,0,canvas.width,canvas.height); imageData=applyThreshold(imageData,160); ctx.putImageData(imageData,0,0);
+        // Modo Python: boost alpha → contraste forte → nitidez → threshold → preto
+        imageData = boostAlpha(imageData);
+        imageData = applyContrast(imageData, 400);
+        ctx.putImageData(imageData, 0, 0);
+        applySharpness(canvas, 15);
+        imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        imageData = applyThreshold(imageData, 160);
+        imageData = convertToBlackPure(imageData);
+        ctx.putImageData(imageData, 0, 0);
     } else {
-        if (adjustments.contrast!==200) { imageData=applyContrast(imageData,adjustments.contrast); ctx.putImageData(imageData,0,0); }
-        if (adjustments.sharpness>0) applySharpness(canvas,adjustments.sharpness);
-        // Aplica threshold automático leve para eliminar cinzas fracos
-        imageData=ctx.getImageData(0,0,canvas.width,canvas.height); imageData=applyThreshold(imageData,200); ctx.putImageData(imageData,0,0);
+        // Modo manual:
+        // 1. Boost alpha: amplifica pixels semi-transparentes ANTES de qualquer filtro
+        //    Resolve assinaturas coloridas claras (roxo, azul claro, tinta desbotada)
+        imageData = boostAlpha(imageData);
+
+        // 2. Contraste: intensifica a diferença entre tinta e fundo
+        if (adjustments.contrast !== 200) {
+            imageData = applyContrast(imageData, adjustments.contrast);
+        }
+        ctx.putImageData(imageData, 0, 0);
+
+        // 3. Nitidez: define as bordas
+        if (adjustments.sharpness > 0) applySharpness(canvas, adjustments.sharpness);
+
+        // 4. Threshold leve: remove resíduos de fundo RGB claro que escaparam
+        imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        imageData = applyThreshold(imageData, 230);
+        ctx.putImageData(imageData, 0, 0);
     }
-    if (adjustments.cleanWeakPixels) { imageData=ctx.getImageData(0,0,canvas.width,canvas.height); imageData=cleanWeakPixelsFn(imageData,15); ctx.putImageData(imageData,0,0); }
-    if (adjustments.convertToBlack) { imageData=ctx.getImageData(0,0,canvas.width,canvas.height); imageData=convertToBlackPure(imageData); ctx.putImageData(imageData,0,0); }
-    if (adjustments.autoCrop) return autoCropCanvas(canvas,15);
+
+    // 5. Limpar pixels fracos (alpha < 15)
+    if (adjustments.cleanWeakPixels) {
+        imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        imageData = cleanWeakPixelsFn(imageData, 15);
+        ctx.putImageData(imageData, 0, 0);
+    }
+
+    // 6. Converter para preto puro (APÓS boost e contraste, não antes)
+    if (adjustments.convertToBlack) {
+        imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        imageData = convertToBlackPure(imageData);
+        ctx.putImageData(imageData, 0, 0);
+    }
+
+    if (adjustments.autoCrop) return autoCropCanvas(canvas, 15);
     return canvas;
 }
 

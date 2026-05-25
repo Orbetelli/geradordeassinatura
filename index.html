@@ -63,6 +63,20 @@
                     </button>
                 </div>
 
+                <!-- Slider de threshold do fundo -->
+                <div id="bgThresholdSection" class="hidden" style="margin-top: 18px; padding: 14px 18px; background: rgba(255,255,255,0.10); border-radius: 10px;">
+                    <label for="bgThreshold" style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px; font-size:13px;">
+                        <span>🎚️ Sensibilidade da remoção</span>
+                        <span id="bgThresholdValue" style="font-weight:600; font-size:14px;">—</span>
+                    </label>
+                    <input type="range" id="bgThreshold" min="5" max="120" value="35" step="1"
+                           style="width:100%;" oninput="bgThresholdAtualizar(1)">
+                    <div style="display:flex; justify-content:space-between; font-size:11px; opacity:0.6; margin-top:4px;">
+                        <span>Menos remoção</span>
+                        <span>Mais remoção</span>
+                    </div>
+                </div>
+
                 <!-- Barra de progresso -->
                 <div id="modelProgress" class="hidden" style="margin-top: 20px;">
                     <div style="background: rgba(255,255,255,0.2); border-radius: 10px; padding: 15px;">
@@ -190,6 +204,21 @@
                             🎨 Remover Fundo (Assinatura 2)
                         </button>
                     </div>
+
+                    <!-- Slider de threshold do fundo - assinatura 2 -->
+                    <div id="bgThresholdSection2" class="hidden" style="margin-top: 18px; padding: 14px 18px; background: rgba(255,255,255,0.10); border-radius: 10px;">
+                        <label for="bgThreshold2" style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px; font-size:13px;">
+                            <span>🎚️ Sensibilidade da remoção</span>
+                            <span id="bgThresholdValue2" style="font-weight:600; font-size:14px;">—</span>
+                        </label>
+                        <input type="range" id="bgThreshold2" min="5" max="120" value="35" step="1"
+                               style="width:100%;" oninput="bgThresholdAtualizar(2)">
+                        <div style="display:flex; justify-content:space-between; font-size:11px; opacity:0.6; margin-top:4px;">
+                            <span>Menos remoção</span>
+                            <span>Mais remoção</span>
+                        </div>
+                    </div>
+
                     <!-- Hint modo pronto -->
                     <div id="sig2ModeloHint" style="display:none; text-align:center; margin-top:10px; font-size:12px; opacity:0.75;">
                         💡 Modelo pronto: a imagem será inserida diretamente no canvas sem texto abaixo. Filtros opcionais disponíveis.
