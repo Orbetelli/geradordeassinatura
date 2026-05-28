@@ -27,6 +27,17 @@
         .catch(function() {});
 })();
 
+// ─── Utilitário global de escape HTML ────────────────────────────────────────
+function escapeHtml(s) {
+    if (s == null) return '';
+    return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 function mostrarToastAtualizacao(msg, data, hash) {
     var toastAntigo = document.getElementById('updateToast');
     if (toastAntigo) toastAntigo.remove();
@@ -37,8 +48,8 @@ function mostrarToastAtualizacao(msg, data, hash) {
         '<span class="update-toast-icon">🚀</span>' +
         '<div class="update-toast-body">' +
             '<div class="update-toast-title">Sistema atualizado!</div>' +
-            '<div class="update-toast-msg">' + msg + '</div>' +
-            '<div class="update-toast-commit">' + data + ' · ' + hash + '</div>' +
+            '<div class="update-toast-msg">' + escapeHtml(msg) + '</div>' +
+            '<div class="update-toast-commit">' + escapeHtml(data) + ' · ' + escapeHtml(hash) + '</div>' +
         '</div>' +
         '<button class="update-toast-close" onclick="fecharToast()">✕</button>';
     document.body.appendChild(toast);
@@ -2144,8 +2155,8 @@ function planRenderUsuarios() {
 }
 
 function planInput(label, id, val, placeholder, field) {
-    return '<div class="plan-input-group"><label>' + label + '</label>' +
-        '<input type="text" id="' + id + '" value="' + (val||'') + '" placeholder="' + placeholder + '" ' +
+    return '<div class="plan-input-group"><label>' + escapeHtml(label) + '</label>' +
+        '<input type="text" id="' + id + '" value="' + escapeHtml(val||'') + '" placeholder="' + escapeHtml(placeholder) + '" ' +
         'oninput="planUpdateField(\'' + field + '\', this.value)"></div>';
 }
 
@@ -2208,6 +2219,10 @@ function planExportarExcel() {
     })
     .then(function(r) { return r.json(); })
     .then(function(resp) {
+        if (resp.error) {
+            alert('Erro ao gerar planilha: ' + resp.error);
+            return;
+        }
         var b64 = resp.b64;
         if (!b64 || b64.length < 100) {
             alert('Erro ao gerar planilha. Tente novamente.');
@@ -2910,6 +2925,9 @@ function iaAdicionarMsg(role, texto, id) {
 }
 
 function iaFormatarTexto(texto) {
+    // Escapa HTML antes de aplicar formatação markdown
+    // para evitar injeção de tags arbitrárias vindas da IA
+    texto = escapeHtml(texto);
     return texto
         .replace(/```(\w*)\n?([\s\S]*?)```/g, '<pre class="ia-code-block"><code>$2</code></pre>')
         .replace(/`([^`]+)`/g, '<code class="ia-code-inline">$1</code>')
@@ -3195,9 +3213,9 @@ function dcmRenderizar(fileName, fileSize) {
     html += '<div class="dcm-file-header">' +
         '<span class="dcm-file-icon">📄</span>' +
         '<div>' +
-        '<div class="dcm-file-name">' + fileName + '</div>' +
+        '<div class="dcm-file-name">' + escapeHtml(fileName) + '</div>' +
         '<div class="dcm-file-meta">' + (fileSize / 1024).toFixed(1) + ' KB' +
-        (tsInfo ? ' · <span class="dcm-ts-badge">' + tsInfo.nome + '</span>' : '') +
+        (tsInfo ? ' · <span class="dcm-ts-badge">' + escapeHtml(tsInfo.nome) + '</span>' : '') +
         '</div>' +
         '</div>' +
         '</div>';
@@ -3211,9 +3229,9 @@ function dcmRenderizar(fileName, fileSize) {
     // SOP Class destaque
     if (sopInfo) {
         html += '<div class="dcm-sop-box">' +
-            '<span class="dcm-sop-cat">' + sopInfo.cat + '</span>' +
-            '<span class="dcm-sop-nome">' + sopInfo.nome + '</span>' +
-            (sopInfo.obs ? '<span class="dcm-sop-obs">' + sopInfo.obs + '</span>' : '') +
+            '<span class="dcm-sop-cat">' + escapeHtml(sopInfo.cat) + '</span>' +
+            '<span class="dcm-sop-nome">' + escapeHtml(sopInfo.nome) + '</span>' +
+            (sopInfo.obs ? '<span class="dcm-sop-obs">' + escapeHtml(sopInfo.obs) + '</span>' : '') +
             '</div>';
     }
 
@@ -3229,12 +3247,12 @@ function dcmRenderizar(fileName, fileSize) {
             if (t.isUID && t.val !== '—') {
                 var info = DICOM_UID_DICT[t.val];
                 if (info) {
-                    extra = '<span class="dcm-uid-desc">' + info.nome + '</span>';
+                    extra = '<span class="dcm-uid-desc">' + escapeHtml(info.nome) + '</span>';
                 }
             }
             html += '<div class="dcm-tag-row">' +
-                '<span class="dcm-tag-nome">' + t.nome + '</span>' +
-                '<span class="dcm-tag-val">' + valDisplay + extra + '</span>' +
+                '<span class="dcm-tag-nome">' + escapeHtml(t.nome) + '</span>' +
+                '<span class="dcm-tag-val">' + escapeHtml(valDisplay) + extra + '</span>' +
                 '</div>';
         });
         html += '</div></div>';

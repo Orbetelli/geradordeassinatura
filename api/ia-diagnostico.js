@@ -1,5 +1,5 @@
 // api/ia-diagnostico.js
-// Proxy Vercel → Groq (compatível com plano gratuito — Node.js)
+// Proxy Vercel → Groq  (compatível com plano gratuito — Node.js)
 
 export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
