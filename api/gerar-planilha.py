@@ -231,7 +231,7 @@ def gerar_planilha(data):
            font=sf(True, BRANCO, 10), fill=pf(AZUL_MED),
            align=al("center"), border=tb())
 
-    equips = data.get("equips", [])
+    equips     = data.get("equips",     [])[:200]
     total_eq = max(len(equips), MIN_ROWS)
     for i in range(total_eq):
         row = i + 2
@@ -262,7 +262,7 @@ def gerar_planilha(data):
            font=sf(True, BRANCO), fill=pf(AZUL_ESC),
            align=al("center"), border=tb())
 
-    servidores = data.get("servidores", [])
+    servidores = data.get("servidores", [])[:200]
     total_sv = max(len(servidores), MIN_ROWS)
     for i in range(total_sv):
         row = i + 2
@@ -294,7 +294,7 @@ def gerar_planilha(data):
            font=sf(False, BRANCO, 10), fill=pf(AZUL_CLA),
            align=al("center"), border=tb())
 
-    usuarios = data.get("usuarios", [])
+    usuarios = data.get("usuarios", [])[:200]
     total_usr = max(len(usuarios), MIN_ROWS)
     for i in range(total_usr):
         row = i + 2

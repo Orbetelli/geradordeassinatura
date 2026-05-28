@@ -1258,8 +1258,10 @@ function applyAllFilters(canvas, ctx) {
 function getSelectedFont() { var sel=document.getElementById('fontSelector'); return sel?sel.value:'Arial'; }
 
 function buildSignatureText(name,regVal,regType,e1,e2) {
-    var t = name+'\n'+regType+': '+regVal;
-    if(e1) t+='\n'+e1; if(e2) t+='\n'+e2;
+    var t = name;
+    if(e2) t+='\n'+e2;          // frase entre nome e CRM (ex: especialidade)
+    t+='\n'+regType+': '+regVal;
+    if(e1) t+='\n'+e1;          // frase após o CRM
     return t;
 }
 
