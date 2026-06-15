@@ -250,7 +250,7 @@ function updateRegisterField(doctorIndex, register) {
     var suffix = doctorIndex === 1 ? '' : '2';
     var label  = document.getElementById('doctorCRMLabel' + suffix);
     var input  = document.getElementById('doctorCRM' + suffix);
-    var placeholders = { CRM: 'Ex: CRM 12345/SP', CRMV: 'Ex: CRMV 98765/SP' };
+    var placeholders = { CRM: 'Ex: CRM 12345/SP', CRMV: 'Ex: CRMV 98765/SP', CRO: 'Ex: CRO 12345/SP' };
     if (label) label.innerHTML = register + ' com Estado: <span class="register-badge">' + register + '</span>';
     if (input) input.placeholder = placeholders[register] || 'Ex: ' + register + ' 12345/SP';
 }
