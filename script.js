@@ -1622,7 +1622,7 @@ function pwParsearNomes() {
 function pwRand(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
 
 function pwGerarSenha(len,useSpecial,upperOnly) {
-    var lower='abcdefghijklmnopqrstuvwxyz',upper='ABCDEFGHIJKLMNOPQRSTUVWXYZ',digits='0123456789',special='@#$%&!';
+    var lower='abcdefghijklmnopqrstuvwxyz',upper='ABCDEFGHIJKLMNOPQRSTUVWXYZ',digits='0123456789',special='@#';
     var chars=upperOnly?upper+digits:lower+upper+digits;
     if (useSpecial) chars+=special;
     var mandatory=[];
