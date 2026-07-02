@@ -70,6 +70,24 @@ function updateRegisterField(doctorIndex, register) {
     var placeholders = { CRM: 'Ex: CRM 12345/SP', CRMV: 'Ex: CRMV 98765/SP', CRO: 'Ex: CRO 12345/SP' };
     if (label) label.innerHTML = register + ' com Estado: <span class="register-badge">' + register + '</span>';
     if (input) input.placeholder = placeholders[register] || 'Ex: ' + register + ' 12345/SP';
+    atualizarLabelsFormatoCRM(doctorIndex, register);
+}
+
+function atualizarLabelsFormatoCRM(doctorIndex, register) {
+    var suffixSel = doctorIndex === 1 ? '1' : '2';
+    var selector  = document.getElementById('crmFormatoSelector' + suffixSel);
+    if (selector) {
+        var btnPadrao   = selector.querySelector('[data-formato="padrao"]');
+        var btnCompacto = selector.querySelector('[data-formato="compacto"]');
+        if (btnPadrao)   btnPadrao.textContent   = 'Padrão (' + register + ': valor)';
+        if (btnCompacto) btnCompacto.textContent = 'Compacto (' + register + '/RS 45534)';
+    }
+    var helper = document.getElementById('crmFormatoHelper' + suffixSel);
+    if (helper) {
+        var suffixInput = doctorIndex === 1 ? '' : '2';
+        var exemplo = suffixInput === '' ? '12345/SP' : '67890/SP';
+        helper.innerHTML = '💡 Padrão: digite "' + exemplo + '" → "' + register + ': ' + exemplo + '". Compacto: digite "RS 45534" (sem barra) → "' + register + '/RS 45534"';
+    }
 }
 
 function selecionarFormatoCRM(doctorIndex, formato, btn) {
