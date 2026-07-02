@@ -19,8 +19,8 @@ var adjustments = {
 };
 
 var professionState = {
-    1: { type: 'medico', register: 'CRM' },
-    2: { type: 'medico', register: 'CRM' }
+    1: { type: 'medico', register: 'CRM', compacto: false },
+    2: { type: 'medico', register: 'CRM', compacto: false }
 };
 
 // Flag: segunda assinatura em modo "modelo pronto"
@@ -29,10 +29,10 @@ var sig2ModoModelo = false;
 // Atalhos de teclado Ctrl+Z / Ctrl+Y para undo/redo da assinatura dupla
 window.addEventListener('keydown', function(e) {
     if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-        if (sig1Pos && sig2Pos) { dragDesfazer(); e.preventDefault(); }
+        if (sig1Pos) { dragDesfazer(); e.preventDefault(); }
     }
     if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
-        if (sig1Pos && sig2Pos) { dragRefazer(); e.preventDefault(); }
+        if (sig1Pos) { dragRefazer(); e.preventDefault(); }
     }
 });
 
@@ -70,6 +70,15 @@ function updateRegisterField(doctorIndex, register) {
     var placeholders = { CRM: 'Ex: CRM 12345/SP', CRMV: 'Ex: CRMV 98765/SP', CRO: 'Ex: CRO 12345/SP' };
     if (label) label.innerHTML = register + ' com Estado: <span class="register-badge">' + register + '</span>';
     if (input) input.placeholder = placeholders[register] || 'Ex: ' + register + ' 12345/SP';
+}
+
+function selecionarFormatoCRM(doctorIndex, formato, btn) {
+    professionState[doctorIndex].compacto = (formato === 'compacto');
+    var suffix = doctorIndex === 1 ? '1' : '2';
+    var selector = document.getElementById('crmFormatoSelector' + suffix);
+    if (selector) selector.querySelectorAll('.profession-btn').forEach(function(b) { b.classList.remove('active'); });
+    if (btn) btn.classList.add('active');
+    sigRegenIfReady();
 }
 
 function setupEventListeners() {
@@ -114,11 +123,16 @@ function setupEventListeners() {
             document.getElementById('fileName2').textContent = '';
             document.getElementById('imagePreviewContainer2').style.display = 'none';
             document.getElementById('removeBgBtn2').classList.add('hidden');
-            professionState[2] = { type: 'medico', register: 'CRM' };
+            professionState[2] = { type: 'medico', register: 'CRM', compacto: false };
             var sel2 = document.getElementById('professionSelector2');
             sel2.querySelectorAll('.profession-btn').forEach(function(b) { b.classList.remove('active'); });
             sel2.querySelector('[data-type="medico"]').classList.add('active');
             updateRegisterField(2, 'CRM');
+            var crmSel2 = document.getElementById('crmFormatoSelector2');
+            if (crmSel2) {
+                crmSel2.querySelectorAll('.profession-btn').forEach(function(b) { b.classList.remove('active'); });
+                crmSel2.querySelector('[data-formato="padrao"]').classList.add('active');
+            }
             // Esconde undo/redo
             var undoWrap = document.getElementById('sig_undoredo_wrap');
             if (undoWrap) undoWrap.style.display = 'none';
@@ -538,10 +552,15 @@ function applyAllFilters(canvas, ctx) {
 
 function getSelectedFont() { var sel=document.getElementById('fontSelector'); return sel?sel.value:'Arial'; }
 
-function buildSignatureText(name,regVal,regType,e1,e2) {
+function buildSignatureText(name,regVal,regType,e1,e2,compacto) {
     var t = name;
     if(e2) t+='\n'+e2;
-    t+='\n'+regType+': '+regVal;
+    if (compacto) {
+        var valorLimpo = regVal.replace(/^\/+/, ''); // remove barra caso o usuário digite por engano
+        t += '\n' + regType + '/' + valorLimpo;
+    } else {
+        t += '\n' + regType + ': ' + regVal;
+    }
     if(e1) t+='\n'+e1;
     return t;
 }
@@ -596,17 +615,37 @@ function processImageAndDraw(src,fc,ctx,name,crm) {
     var W=fc.width,H=fc.height,mW=Math.floor(280*sigScale),mH=Math.floor(50*sigScale);
     var ratio=Math.min(mW/pc.width,mH/pc.height,1.0);
     var nW=Math.floor(pc.width*ratio), nH=Math.floor(pc.height*ratio);
-    ctx.font='bold 11px "'+getSelectedFont()+'"'; ctx.fillStyle='black'; ctx.textAlign='center';
     var addX=document.getElementById('addExtraPhrase').checked;
     var e1=addX?document.getElementById('extraPhrase').value.trim():'';
     var e2=addX?document.getElementById('extraPhrase2').value.trim():'';
-    var text=buildSignatureText(name,crm,professionState[1].register,e1,e2);
+    var text=buildSignatureText(name,crm,professionState[1].register,e1,e2,professionState[1].compacto);
     var lines=text.split('\n'), mg=5, hC=nH+mg+lines.length*13;
-    var yS=Math.floor((H-hC)/2), xS=Math.floor((W-nW)/2);
-    ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
-    ctx.drawImage(pc,0,0,pc.width,pc.height,xS,yS,nW,nH);
-    lines.forEach(function(l,i){ctx.fillText(l,W/2,yS+nH+mg+11+(i*13));});
+    var xS=Math.floor((W-nW)/2), yS=Math.floor((H-hC)/2);
+
+    // Posição rastreável (permite arrastar mesmo com uma única assinatura)
+    sig1Pos = { x: xS, y: yS, w: nW, h: nH, lines: lines, mg: mg };
+    sig2Pos = null;
+
+    doubleCtx  = ctx;
+    doubleData = { fc: fc, pc1: pc, pc2: null, W: W, H: H, font: getSelectedFont() };
+
+    drawSignatures();
     fc.style.display='block';
+
+    var hint = document.getElementById('canvasDragHint');
+    if (hint) hint.style.display = 'block';
+
+    var undoWrap = document.getElementById('sig_undoredo_wrap');
+    if (undoWrap) undoWrap.style.display = 'flex';
+    dragResetarHistorico();
+
+    fc.onmousedown  = onSigMouseDown;
+    fc.onmousemove  = onSigMouseMove;
+    fc.onmouseup    = onSigMouseUp;
+    fc.onmouseleave = onSigMouseUp;
+    fc.ontouchstart = onSigTouchStart;
+    fc.ontouchmove  = onSigTouchMove;
+    fc.ontouchend   = onSigMouseUp;
 }
 
 // ── Estado do drag & drop das assinaturas duplas ──
@@ -626,39 +665,40 @@ var dragFuturo     = [];
 var DRAG_MAX_HIST  = 20;
 
 function dragSalvarEstado() {
-    if (!sig1Pos || !sig2Pos) return;
+    if (!sig1Pos) return;
     dragHistorico.push({
         s1: { x: sig1Pos.x, y: sig1Pos.y },
-        s2: { x: sig2Pos.x, y: sig2Pos.y }
+        s2: sig2Pos ? { x: sig2Pos.x, y: sig2Pos.y } : null
     });
     if (dragHistorico.length > DRAG_MAX_HIST) dragHistorico.shift();
-    dragFuturo = [];
+    dragFuturo = []; // limpa redo ao fazer nova ação
     dragAtualizarBotoes();
 }
 
 function dragDesfazer() {
-    if (!dragHistorico.length || !sig1Pos || !sig2Pos) return;
+    if (!dragHistorico.length || !sig1Pos) return;
+    // Salva estado atual no futuro antes de desfazer
     dragFuturo.push({
         s1: { x: sig1Pos.x, y: sig1Pos.y },
-        s2: { x: sig2Pos.x, y: sig2Pos.y }
+        s2: sig2Pos ? { x: sig2Pos.x, y: sig2Pos.y } : null
     });
     var anterior = dragHistorico.pop();
     sig1Pos.x = anterior.s1.x; sig1Pos.y = anterior.s1.y;
-    sig2Pos.x = anterior.s2.x; sig2Pos.y = anterior.s2.y;
-    drawDoubleCanvas();
+    if (sig2Pos && anterior.s2) { sig2Pos.x = anterior.s2.x; sig2Pos.y = anterior.s2.y; }
+    drawSignatures();
     dragAtualizarBotoes();
 }
 
 function dragRefazer() {
-    if (!dragFuturo.length || !sig1Pos || !sig2Pos) return;
+    if (!dragFuturo.length || !sig1Pos) return;
     dragHistorico.push({
         s1: { x: sig1Pos.x, y: sig1Pos.y },
-        s2: { x: sig2Pos.x, y: sig2Pos.y }
+        s2: sig2Pos ? { x: sig2Pos.x, y: sig2Pos.y } : null
     });
     var proximo = dragFuturo.pop();
     sig1Pos.x = proximo.s1.x; sig1Pos.y = proximo.s1.y;
-    sig2Pos.x = proximo.s2.x; sig2Pos.y = proximo.s2.y;
-    drawDoubleCanvas();
+    if (sig2Pos && proximo.s2) { sig2Pos.x = proximo.s2.x; sig2Pos.y = proximo.s2.y; }
+    drawSignatures();
     dragAtualizarBotoes();
 }
 
@@ -689,8 +729,8 @@ function processDoubleImages(s1,s2,fc,ctx,n1,c1) {
     var addX=document.getElementById('addExtraPhrase').checked;
     var e1=addX?document.getElementById('extraPhrase').value.trim():'';
     var e2=addX?document.getElementById('extraPhrase2').value.trim():'';
-    var t1=buildSignatureText(n1,c1,professionState[1].register,e1,'');
-    var t2 = sig2ModoModelo ? '' : buildSignatureText(n2,c2,professionState[2].register,e2,'');
+    var t1=buildSignatureText(n1,c1,professionState[1].register,e1,'',professionState[1].compacto);
+    var t2 = sig2ModoModelo ? '' : buildSignatureText(n2,c2,professionState[2].register,e2,'',professionState[2].compacto);
     var l1=t1.split('\n'), l2= sig2ModoModelo ? [] : t2.split('\n'), mg=5;
     var hC1=nH1+mg+l1.length*13, hC2=nH2+(sig2ModoModelo?0:mg+l2.length*13);
 
@@ -705,7 +745,7 @@ function processDoubleImages(s1,s2,fc,ctx,n1,c1) {
     doubleCtx = ctx;
     doubleData = { fc: fc, pc1: pc1, pc2: pc2, W: W, H: H, font: getSelectedFont() };
 
-    drawDoubleCanvas();
+    drawSignatures();
     fc.style.display='block';
 
     var hint = document.getElementById('canvasDragHint');
@@ -724,10 +764,10 @@ function processDoubleImages(s1,s2,fc,ctx,n1,c1) {
     fc.ontouchend   = onSigMouseUp;
 }
 
-function drawDoubleCanvas() {
-    if (!doubleCtx || !doubleData || !sig1Pos || !sig2Pos) return;
+function drawSignatures() {
+    if (!doubleCtx || !doubleData || !sig1Pos) return;
     var ctx=doubleCtx, d=doubleData, W=d.W, H=d.H;
-    var p1=sig1Pos, p2=sig2Pos;
+    var p1=sig1Pos;
 
     ctx.clearRect(0,0,W,H);
     ctx.fillStyle='white'; ctx.fillRect(0,0,W,H);
@@ -737,8 +777,11 @@ function drawDoubleCanvas() {
     ctx.drawImage(d.pc1,0,0,d.pc1.width,d.pc1.height, p1.x, p1.y, p1.w, p1.h);
     p1.lines.forEach(function(l,i){ ctx.fillText(l, p1.x+p1.w/2, p1.y+p1.h+p1.mg+11+(i*13)); });
 
-    ctx.drawImage(d.pc2,0,0,d.pc2.width,d.pc2.height, p2.x, p2.y, p2.w, p2.h);
-    p2.lines.forEach(function(l,i){ ctx.fillText(l, p2.x+p2.w/2, p2.y+p2.h+p2.mg+11+(i*13)); });
+    if (d.pc2 && sig2Pos) {
+        var p2=sig2Pos;
+        ctx.drawImage(d.pc2,0,0,d.pc2.width,d.pc2.height, p2.x, p2.y, p2.w, p2.h);
+        p2.lines.forEach(function(l,i){ ctx.fillText(l, p2.x+p2.w/2, p2.y+p2.h+p2.mg+11+(i*13)); });
+    }
 }
 
 function getSigAtPoint(x, y) {
@@ -786,7 +829,7 @@ function onSigMouseMove(e) {
     var H = doubleData ? doubleData.H : 120;
     pos.x = Math.max(0, Math.min(W - pos.w, pt.x - dragState.offsetX));
     pos.y = Math.max(0, Math.min(H - pos.h - pos.lines.length*13 - pos.mg - 5, pt.y - dragState.offsetY));
-    drawDoubleCanvas();
+    drawSignatures();
     e.preventDefault();
 }
 

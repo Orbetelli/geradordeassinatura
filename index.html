@@ -177,6 +177,11 @@
                 <div class="form-group">
                     <label for="doctorCRM" id="doctorCRMLabel">CRM com Estado:</label>
                     <input type="text" id="doctorCRM" placeholder="Ex: CRM 12345/SP">
+                    <div class="crm-formato-selector" id="crmFormatoSelector1" style="display:flex; gap:8px; margin-top:10px;">
+                        <button type="button" class="profession-btn active" data-formato="padrao" onclick="selecionarFormatoCRM(1, 'padrao', this)">Padrão (CRM: valor)</button>
+                        <button type="button" class="profession-btn" data-formato="compacto" onclick="selecionarFormatoCRM(1, 'compacto', this)">Compacto (CRM/RS 45534)</button>
+                    </div>
+                    <div class="helper-text" style="margin-top:8px;">💡 Padrão: digite "12345/SP" → "CRM: 12345/SP". Compacto: digite "RS 45534" (sem barra) → "CRM/RS 45534"</div>
                 </div>
             </div>
 
@@ -244,6 +249,11 @@
                     <div class="form-group">
                         <label for="doctorCRM2" id="doctorCRM2Label">CRM com Estado:</label>
                         <input type="text" id="doctorCRM2" placeholder="Ex: CRM 67890/SP">
+                        <div class="crm-formato-selector" id="crmFormatoSelector2" style="display:flex; gap:8px; margin-top:10px;">
+                            <button type="button" class="profession-btn active" data-formato="padrao" onclick="selecionarFormatoCRM(2, 'padrao', this)">Padrão (CRM: valor)</button>
+                            <button type="button" class="profession-btn" data-formato="compacto" onclick="selecionarFormatoCRM(2, 'compacto', this)">Compacto (CRM/RS 45534)</button>
+                        </div>
+                        <div class="helper-text" style="margin-top:8px;">💡 Padrão: digite "67890/SP" → "CRM: 67890/SP". Compacto: digite "RS 45534" (sem barra) → "CRM/RS 45534"</div>
                     </div>
                 </div>
             </div>
