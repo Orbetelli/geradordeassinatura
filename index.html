@@ -37,6 +37,7 @@
         <div class="qb-tabs">
             <button class="qb-tab active" onclick="geralSwitchTab('assinatura', this)">🩺 Gerador de Assinatura</button>
             <button class="qb-tab" onclick="geralSwitchTab('senha', this)">🔐 Gerador de Senha</button>
+            <button class="qb-tab" onclick="geralSwitchTab('logo', this)">🖼️ Logo da Unidade</button>
         </div>
 
         <!-- ── SUB-ABA: GERADOR DE ASSINATURA ── -->
@@ -397,6 +398,130 @@
             </div>
 
         </div><!-- fim geral-panel-senha -->
+
+        <!-- ── SUB-ABA: LOGO DA UNIDADE ── -->
+        <div id="geral-panel-logo" class="qb-panel">
+
+            <div class="info-box">
+                🖼️ <strong>Logo da Unidade:</strong> gera a imagem já no padrão 120x120 usado no painel da unidade.
+                <br><small>Importe a logo existente ou crie uma versão simples com o nome da unidade.</small>
+            </div>
+
+            <div class="qb-tabs" style="margin-top:14px;">
+                <button class="qb-tab active" onclick="logoSwitchModo('import', this)">📤 Importar Logo</button>
+                <button class="qb-tab" onclick="logoSwitchModo('manual', this)">✍️ Criar Manual</button>
+            </div>
+
+            <!-- MODO: IMPORTAR -->
+            <div id="logo-modo-import" class="qb-panel active">
+
+                <div class="upload-section">
+                    <div class="file-input-wrapper">
+                        <label for="logoImportFile" class="file-input-label">📁 Selecionar Logo da Unidade</label>
+                        <input type="file" id="logoImportFile" accept="image/*" onchange="logoImportFileChange(event)">
+                    </div>
+                    <div id="logoImportFileName" style="text-align:center; margin-top:10px;"></div>
+                </div>
+
+                <div class="form-group" style="margin-top:16px;">
+                    <label for="logoImportNome">Nome da Unidade <span style="opacity:0.5;font-weight:400;">(opcional, só usado no nome do arquivo)</span></label>
+                    <input type="text" id="logoImportNome" placeholder="Ex: Digimax">
+                </div>
+
+                <div class="pw-simple-row">
+                    <span class="slabel">Fundo transparente</span>
+                    <label class="pw-switch">
+                        <input type="checkbox" id="logoImportTransparente" checked onchange="logoImportToggleTransparente(this.checked)">
+                        <span class="pw-slider-sw"></span>
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label for="logoImportBgColor">Cor de fundo <span style="opacity:0.5;font-weight:400;">(se não for transparente)</span></label><br>
+                    <input type="color" id="logoImportBgColor" value="#ffffff" disabled oninput="logoRenderImportPreview()"
+                        style="width:60px; height:36px; padding:2px; border-radius:8px; border:1px solid rgba(255,255,255,0.3); cursor:pointer;">
+                </div>
+
+                <div class="form-group">
+                    <label>Margem interna: <span class="threshold-value" id="logoImportPaddingVal">8px</span></label>
+                    <input type="range" id="logoImportPadding" min="0" max="30" value="8" step="1"
+                        oninput="document.getElementById('logoImportPaddingVal').textContent=this.value+'px'; logoRenderImportPreview();">
+                    <div class="helper-text">💡 Espaço entre a logo e a borda do quadrado 120x120</div>
+                </div>
+
+                <div style="text-align:center; margin:20px 0;">
+                    <canvas id="logoImportCanvas" width="120" height="120"
+                        style="width:240px; height:240px; border-radius:10px; border:1px solid rgba(255,255,255,0.25);
+                               background-image: repeating-conic-gradient(#5a5a5a 0% 25%, #3f3f3f 0% 50%);
+                               background-size: 16px 16px;"></canvas>
+                </div>
+
+                <div style="text-align:center;">
+                    <button class="btn btn-success" onclick="logoDownloadImport()">💾 Baixar Logo 120x120</button>
+                </div>
+
+            </div><!-- fim logo-modo-import -->
+
+            <!-- MODO: MANUAL -->
+            <div id="logo-modo-manual" class="qb-panel">
+
+                <div class="form-group">
+                    <label for="logoManualNome">Nome da Unidade</label>
+                    <input type="text" id="logoManualNome" placeholder="Ex: Clínica São José" oninput="logoRenderManualPreview()">
+                </div>
+
+                <div class="form-group">
+                    <label for="logoManualModoTexto">Exibir como</label><br>
+                    <select id="logoManualModoTexto" onchange="logoRenderManualPreview()">
+                        <option value="iniciais">Iniciais (Ex: CS)</option>
+                        <option value="completo">Nome completo</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="logoManualBgColor">Cor de fundo</label><br>
+                    <input type="color" id="logoManualBgColor" value="#11998e" oninput="logoRenderManualPreview()"
+                        style="width:60px; height:36px; padding:2px; border-radius:8px; border:1px solid rgba(255,255,255,0.3); cursor:pointer;">
+                    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">
+                        <button type="button" onclick="logoManualSelecionarCor('#11998e')" title="Teal" style="width:28px;height:28px;border-radius:6px;border:1px solid rgba(255,255,255,0.3);background:#11998e;cursor:pointer;"></button>
+                        <button type="button" onclick="logoManualSelecionarCor('#2b6cb0')" title="Azul" style="width:28px;height:28px;border-radius:6px;border:1px solid rgba(255,255,255,0.3);background:#2b6cb0;cursor:pointer;"></button>
+                        <button type="button" onclick="logoManualSelecionarCor('#7c3aed')" title="Roxo" style="width:28px;height:28px;border-radius:6px;border:1px solid rgba(255,255,255,0.3);background:#7c3aed;cursor:pointer;"></button>
+                        <button type="button" onclick="logoManualSelecionarCor('#dc2626')" title="Vermelho" style="width:28px;height:28px;border-radius:6px;border:1px solid rgba(255,255,255,0.3);background:#dc2626;cursor:pointer;"></button>
+                        <button type="button" onclick="logoManualSelecionarCor('#ea580c')" title="Laranja" style="width:28px;height:28px;border-radius:6px;border:1px solid rgba(255,255,255,0.3);background:#ea580c;cursor:pointer;"></button>
+                        <button type="button" onclick="logoManualSelecionarCor('#16a34a')" title="Verde" style="width:28px;height:28px;border-radius:6px;border:1px solid rgba(255,255,255,0.3);background:#16a34a;cursor:pointer;"></button>
+                        <button type="button" onclick="logoManualSelecionarCor('#0f172a')" title="Marinho" style="width:28px;height:28px;border-radius:6px;border:1px solid rgba(255,255,255,0.3);background:#0f172a;cursor:pointer;"></button>
+                        <button type="button" onclick="logoManualSelecionarCor('#64748b')" title="Cinza" style="width:28px;height:28px;border-radius:6px;border:1px solid rgba(255,255,255,0.3);background:#64748b;cursor:pointer;"></button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Cor do texto</label>
+                    <div style="display:flex; gap:16px; align-items:center; margin-top:6px;">
+                        <label style="display:flex; align-items:center; gap:6px; font-weight:400; cursor:pointer;">
+                            <input type="radio" name="logoManualCorTexto" value="auto" checked onchange="logoManualCorModoChange()"> Automática (contraste)
+                        </label>
+                        <label style="display:flex; align-items:center; gap:6px; font-weight:400; cursor:pointer;">
+                            <input type="radio" name="logoManualCorTexto" value="custom" onchange="logoManualCorModoChange()"> Personalizada
+                        </label>
+                    </div>
+                    <div id="logoManualTextColorWrap" style="display:none; margin-top:10px;">
+                        <input type="color" id="logoManualTextColor" value="#ffffff" oninput="logoRenderManualPreview()"
+                            style="width:60px; height:36px; padding:2px; border-radius:8px; border:1px solid rgba(255,255,255,0.3); cursor:pointer;">
+                    </div>
+                </div>
+
+                <div style="text-align:center; margin:20px 0;">
+                    <canvas id="logoManualCanvas" width="120" height="120"
+                        style="width:240px; height:240px; border-radius:10px; border:1px solid rgba(255,255,255,0.25);"></canvas>
+                </div>
+
+                <div style="text-align:center;">
+                    <button class="btn btn-success" onclick="logoDownloadManual()">💾 Baixar Logo 120x120</button>
+                </div>
+
+            </div><!-- fim logo-modo-manual -->
+
+        </div><!-- fim geral-panel-logo -->
 
     </div>
 </div>
@@ -1096,6 +1221,16 @@
 <!-- SheetJS para exportar/importar Excel -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <!-- Scripts -->
-<script src="script.js"></script>
+<script src="js/core.js"></script>
+<script src="js/assinatura.js"></script>
+<script src="js/senha.js"></script>
+<script src="js/querybuilder.js"></script>
+<script src="js/comandos.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/cecho.js"></script>
+<script src="js/ia.js"></script>
+<script src="js/dicom.js"></script>
+<script src="js/implantacao.js"></script>
+<script src="js/logo.js"></script>
 </body>
 </html>
