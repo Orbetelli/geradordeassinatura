@@ -1,8 +1,8 @@
 // ========================================
-// LOGO DA UNIDADE — padrão 120x120
+// LOGO DA UNIDADE — padrão 200x200
 // ========================================
 
-var LOGO_SIZE = 120;
+var LOGO_SIZE = 200;
 var logoImportImg = null;
 
 // ── Troca entre os modos "Importar" e "Manual" ──
@@ -77,7 +77,7 @@ function logoDownloadImport() {
         var url = URL.createObjectURL(blob);
         var a = document.createElement('a');
         a.href = url;
-        a.download = 'Logo_' + nomeArquivo + '_120x120.png';
+        a.download = 'Logo_' + nomeArquivo + '_200x200.png';
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
         URL.revokeObjectURL(url);
     }, 'image/png');
@@ -159,7 +159,7 @@ function logoRenderManualPreview() {
     ctx.textBaseline = 'middle';
 
     if (!nome) {
-        ctx.font = '13px "Segoe UI", sans-serif';
+        ctx.font = Math.round(LOGO_SIZE * 0.108) + 'px "Segoe UI", sans-serif';
         ctx.globalAlpha = 0.55;
         ctx.fillText('Sem nome', LOGO_SIZE / 2, LOGO_SIZE / 2);
         ctx.globalAlpha = 1;
@@ -168,18 +168,22 @@ function logoRenderManualPreview() {
 
     if (modoTexto === 'iniciais') {
         var ini = logoIniciais(nome);
-        ctx.font = 'bold 44px "Segoe UI", sans-serif';
-        ctx.fillText(ini, LOGO_SIZE / 2, LOGO_SIZE / 2 + 4);
+        var iniFontSize = Math.round(LOGO_SIZE * 0.367);
+        var iniOffsetY = Math.round(LOGO_SIZE * 0.033);
+        ctx.font = 'bold ' + iniFontSize + 'px "Segoe UI", sans-serif';
+        ctx.fillText(ini, LOGO_SIZE / 2, LOGO_SIZE / 2 + iniOffsetY);
     } else {
-        var fontSize = 20;
+        var fontSize = Math.round(LOGO_SIZE * 0.167);
+        var fontSizeMin = Math.round(LOGO_SIZE * 0.067);
+        var maxWidth = LOGO_SIZE - Math.round(LOGO_SIZE * 0.133);
         var linhas;
         do {
             ctx.font = 'bold ' + fontSize + 'px "Segoe UI", sans-serif';
-            linhas = logoQuebrarLinhas(ctx, nome, LOGO_SIZE - 16);
+            linhas = logoQuebrarLinhas(ctx, nome, maxWidth);
             fontSize -= 1;
-        } while (linhas.length > 3 && fontSize > 8);
+        } while (linhas.length > 3 && fontSize > fontSizeMin);
 
-        var lineHeight = fontSize + 5;
+        var lineHeight = fontSize + Math.round(LOGO_SIZE * 0.042);
         var startY = (LOGO_SIZE / 2) - ((linhas.length - 1) * lineHeight) / 2;
         linhas.forEach(function(l, i) {
             ctx.fillText(l, LOGO_SIZE / 2, startY + i * lineHeight);
@@ -195,7 +199,7 @@ function logoDownloadManual() {
         var url = URL.createObjectURL(blob);
         var a = document.createElement('a');
         a.href = url;
-        a.download = 'Logo_' + nomeArquivo + '_120x120.png';
+        a.download = 'Logo_' + nomeArquivo + '_200x200.png';
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
         URL.revokeObjectURL(url);
     }, 'image/png');
