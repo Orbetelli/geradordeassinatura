@@ -183,6 +183,20 @@
                     </div>
                     <div class="helper-text" style="margin-top:8px;">💡 Padrão: digite "12345/SP" → "CRM: 12345/SP". Compacto: digite "RS 45534" (sem barra) → "CRM/RS 45534"</div>
                 </div>
+
+                <div class="checkbox-group" style="margin-bottom: 15px;">
+                    <input type="checkbox" id="addRQE1" onchange="toggleAddRQE(1, this.checked)">
+                    <label for="addRQE1" style="margin-bottom: 0;">➕ Adicionar RQE (Registro de Qualificação de Especialista)</label>
+                </div>
+                <div class="form-group hidden" id="rqeGroup1">
+                    <label for="doctorRQE">RQE com Estado:</label>
+                    <input type="text" id="doctorRQE" placeholder="Ex: RQE 40499/SP">
+                    <div class="crm-formato-selector" id="rqeFormatoSelector1" style="display:flex; gap:8px; margin-top:10px;">
+                        <button type="button" class="profession-btn active" data-formato="padrao" onclick="selecionarFormatoRQE(1, 'padrao', this)">Padrão (RQE: valor)</button>
+                        <button type="button" class="profession-btn" data-formato="compacto" onclick="selecionarFormatoRQE(1, 'compacto', this)">Compacto (RQE/RS 40499)</button>
+                    </div>
+                    <div class="helper-text" style="margin-top:8px;">💡 Padrão: digite "40499/SP" → "RQE: 40499/SP". Compacto: digite "RS 40499" (sem barra) → "RQE/RS 40499"</div>
+                </div>
             </div>
 
             <!-- Dados do profissional 2 (oculto por padrão) -->
@@ -255,6 +269,20 @@
                         </div>
                         <div class="helper-text" style="margin-top:8px;">💡 Padrão: digite "67890/SP" → "CRM: 67890/SP". Compacto: digite "RS 45534" (sem barra) → "CRM/RS 45534"</div>
                     </div>
+
+                    <div class="checkbox-group" style="margin-bottom: 15px;">
+                        <input type="checkbox" id="addRQE2" onchange="toggleAddRQE(2, this.checked)">
+                        <label for="addRQE2" style="margin-bottom: 0;">➕ Adicionar RQE (Registro de Qualificação de Especialista)</label>
+                    </div>
+                    <div class="form-group hidden" id="rqeGroup2">
+                        <label for="doctorRQE2">RQE com Estado:</label>
+                        <input type="text" id="doctorRQE2" placeholder="Ex: RQE 40499/SP">
+                        <div class="crm-formato-selector" id="rqeFormatoSelector2" style="display:flex; gap:8px; margin-top:10px;">
+                            <button type="button" class="profession-btn active" data-formato="padrao" onclick="selecionarFormatoRQE(2, 'padrao', this)">Padrão (RQE: valor)</button>
+                            <button type="button" class="profession-btn" data-formato="compacto" onclick="selecionarFormatoRQE(2, 'compacto', this)">Compacto (RQE/RS 40499)</button>
+                        </div>
+                        <div class="helper-text" style="margin-top:8px;">💡 Padrão: digite "40499/SP" → "RQE: 40499/SP". Compacto: digite "RS 40499" (sem barra) → "RQE/RS 40499"</div>
+                    </div>
                 </div>
             </div>
 
@@ -264,6 +292,14 @@
                 <input type="range" id="sigSize" min="20" max="200" value="100" step="5"
                     oninput="document.getElementById('sigSizeVal').textContent=this.value+'%'; sigRegenIfReady();">
                 <div class="helper-text">💡 Ajusta o tamanho da imagem dentro da assinatura (20% a 200%)</div>
+            </div>
+
+            <!-- Espaçamento entre imagem e texto -->
+            <div class="form-group">
+                <label>↕️ Espaçamento entre a Imagem e o Texto: <span class="threshold-value" id="sigGapVal">5px</span></label>
+                <input type="range" id="sigGap" min="0" max="40" value="5" step="1"
+                    oninput="document.getElementById('sigGapVal').textContent=this.value+'px'; sigRegenIfReady();">
+                <div class="helper-text">💡 Aumenta o espaço em branco entre a assinatura e o nome/CRM abaixo</div>
             </div>
 
             <!-- Seletor de fonte -->

@@ -19,8 +19,8 @@ var adjustments = {
 };
 
 var professionState = {
-    1: { type: 'medico', register: 'CRM', compacto: false },
-    2: { type: 'medico', register: 'CRM', compacto: false }
+    1: { type: 'medico', register: 'CRM', compacto: false, rqeCompacto: false },
+    2: { type: 'medico', register: 'CRM', compacto: false, rqeCompacto: false }
 };
 
 // Flag: segunda assinatura em modo "modelo pronto"
@@ -81,6 +81,27 @@ function selecionarFormatoCRM(doctorIndex, formato, btn) {
     sigRegenIfReady();
 }
 
+function toggleAddRQE(doctorIndex, checked) {
+    var suffixGroup = doctorIndex === 1 ? '1' : '2';   // rqeGroup1 / rqeGroup2
+    var suffixInput = doctorIndex === 1 ? '' : '2';    // doctorRQE / doctorRQE2
+    var group = document.getElementById('rqeGroup' + suffixGroup);
+    if (group) group.classList.toggle('hidden', !checked);
+    if (!checked) {
+        var input = document.getElementById('doctorRQE' + suffixInput);
+        if (input) input.value = '';
+    }
+    sigRegenIfReady();
+}
+
+function selecionarFormatoRQE(doctorIndex, formato, btn) {
+    professionState[doctorIndex].rqeCompacto = (formato === 'compacto');
+    var suffix = doctorIndex === 1 ? '1' : '2';
+    var selector = document.getElementById('rqeFormatoSelector' + suffix);
+    if (selector) selector.querySelectorAll('.profession-btn').forEach(function(b) { b.classList.remove('active'); });
+    if (btn) btn.classList.add('active');
+    sigRegenIfReady();
+}
+
 function setupEventListeners() {
     function bind(id, fn) { var el = document.getElementById(id); if (el) el.addEventListener('change', fn); }
     function bindInput(id, fn) { var el = document.getElementById(id); if (el) el.addEventListener('input', fn); }
@@ -119,11 +140,11 @@ function setupEventListeners() {
         document.getElementById('doctor2Section').classList.toggle('hidden', !e.target.checked);
         if (!e.target.checked) {
             uploadedImage2 = processedImage2 = null;
-            ['doctorName2','doctorCRM2'].forEach(function(id) { document.getElementById(id).value = ''; });
+            ['doctorName2','doctorCRM2','doctorRQE2'].forEach(function(id) { document.getElementById(id).value = ''; });
             document.getElementById('fileName2').textContent = '';
             document.getElementById('imagePreviewContainer2').style.display = 'none';
             document.getElementById('removeBgBtn2').classList.add('hidden');
-            professionState[2] = { type: 'medico', register: 'CRM', compacto: false };
+            professionState[2] = { type: 'medico', register: 'CRM', compacto: false, rqeCompacto: false };
             var sel2 = document.getElementById('professionSelector2');
             sel2.querySelectorAll('.profession-btn').forEach(function(b) { b.classList.remove('active'); });
             sel2.querySelector('[data-type="medico"]').classList.add('active');
@@ -133,6 +154,15 @@ function setupEventListeners() {
                 crmSel2.querySelectorAll('.profession-btn').forEach(function(b) { b.classList.remove('active'); });
                 crmSel2.querySelector('[data-formato="padrao"]').classList.add('active');
             }
+            var rqeSel2 = document.getElementById('rqeFormatoSelector2');
+            if (rqeSel2) {
+                rqeSel2.querySelectorAll('.profession-btn').forEach(function(b) { b.classList.remove('active'); });
+                rqeSel2.querySelector('[data-formato="padrao"]').classList.add('active');
+            }
+            var addRQE2cb = document.getElementById('addRQE2');
+            if (addRQE2cb) addRQE2cb.checked = false;
+            var rqeGroup2 = document.getElementById('rqeGroup2');
+            if (rqeGroup2) rqeGroup2.classList.add('hidden');
             // Esconde undo/redo
             var undoWrap = document.getElementById('sig_undoredo_wrap');
             if (undoWrap) undoWrap.style.display = 'none';
@@ -152,7 +182,7 @@ function setupEventListeners() {
         previewDelay = setTimeout(function() { sigRegenIfReady(); }, 400);
     }
     ['doctorName', 'doctorCRM', 'doctorName2', 'doctorCRM2',
-     'extraPhrase', 'extraPhrase2'].forEach(function(id) {
+     'extraPhrase', 'extraPhrase2', 'doctorRQE', 'doctorRQE2'].forEach(function(id) {
         bindInput(id, triggerLivePreview);
     });
 }
@@ -552,7 +582,9 @@ function applyAllFilters(canvas, ctx) {
 
 function getSelectedFont() { var sel=document.getElementById('fontSelector'); return sel?sel.value:'Arial'; }
 
-function buildSignatureText(name,regVal,regType,e1,e2,compacto) {
+function getSigGap() { var sel=document.getElementById('sigGap'); return sel ? parseInt(sel.value) : 5; }
+
+function buildSignatureText(name,regVal,regType,e1,e2,compacto,rqeVal,rqeCompacto) {
     var t = name;
     if(e2) t+='\n'+e2;
     if (compacto) {
@@ -560,6 +592,10 @@ function buildSignatureText(name,regVal,regType,e1,e2,compacto) {
         t += '\n' + regType + '/' + valorLimpo;
     } else {
         t += '\n' + regType + ': ' + regVal;
+    }
+    if (rqeVal) {
+        var rqeLimpo = rqeVal.replace(/^\/+/, '');
+        t += '\n' + (rqeCompacto ? ('RQE/' + rqeLimpo) : ('RQE: ' + rqeVal));
     }
     if(e1) t+='\n'+e1;
     return t;
@@ -618,8 +654,10 @@ function processImageAndDraw(src,fc,ctx,name,crm) {
     var addX=document.getElementById('addExtraPhrase').checked;
     var e1=addX?document.getElementById('extraPhrase').value.trim():'';
     var e2=addX?document.getElementById('extraPhrase2').value.trim():'';
-    var text=buildSignatureText(name,crm,professionState[1].register,e1,e2,professionState[1].compacto);
-    var lines=text.split('\n'), mg=5, hC=nH+mg+lines.length*13;
+    var addRQE1=document.getElementById('addRQE1').checked;
+    var rqe1=addRQE1?document.getElementById('doctorRQE').value.trim():'';
+    var text=buildSignatureText(name,crm,professionState[1].register,e1,e2,professionState[1].compacto,rqe1,professionState[1].rqeCompacto);
+    var lines=text.split('\n'), mg=getSigGap(), hC=nH+mg+lines.length*13;
     var xS=Math.floor((W-nW)/2), yS=Math.floor((H-hC)/2);
 
     // Posição rastreável (permite arrastar mesmo com uma única assinatura)
@@ -729,9 +767,13 @@ function processDoubleImages(s1,s2,fc,ctx,n1,c1) {
     var addX=document.getElementById('addExtraPhrase').checked;
     var e1=addX?document.getElementById('extraPhrase').value.trim():'';
     var e2=addX?document.getElementById('extraPhrase2').value.trim():'';
-    var t1=buildSignatureText(n1,c1,professionState[1].register,e1,'',professionState[1].compacto);
-    var t2 = sig2ModoModelo ? '' : buildSignatureText(n2,c2,professionState[2].register,e2,'',professionState[2].compacto);
-    var l1=t1.split('\n'), l2= sig2ModoModelo ? [] : t2.split('\n'), mg=5;
+    var addRQE1=document.getElementById('addRQE1').checked;
+    var rqe1=addRQE1?document.getElementById('doctorRQE').value.trim():'';
+    var addRQE2=document.getElementById('addRQE2')?document.getElementById('addRQE2').checked:false;
+    var rqe2=addRQE2?document.getElementById('doctorRQE2').value.trim():'';
+    var t1=buildSignatureText(n1,c1,professionState[1].register,e1,'',professionState[1].compacto,rqe1,professionState[1].rqeCompacto);
+    var t2 = sig2ModoModelo ? '' : buildSignatureText(n2,c2,professionState[2].register,e2,'',professionState[2].compacto,rqe2,professionState[2].rqeCompacto);
+    var l1=t1.split('\n'), l2= sig2ModoModelo ? [] : t2.split('\n'), mg=getSigGap();
     var hC1=nH1+mg+l1.length*13, hC2=nH2+(sig2ModoModelo?0:mg+l2.length*13);
 
     var totalW = nW1 + nW2;
