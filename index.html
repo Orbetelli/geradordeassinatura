@@ -679,12 +679,13 @@
         <h2>🛠️ Suporte</h2>
 
         <!-- Sub-abas internas -->
-        <div class="qb-tabs">
+        <div class="qb-tabs" style="justify-content:center; flex-wrap:wrap;">
             <button class="qb-tab active" onclick="suporteSwitchTab('comandos', this)">💻 Comandos</button>
             <button class="qb-tab" onclick="suporteSwitchTab('storage', this)">🗂️ Storage</button>
             <button class="qb-tab" onclick="suporteSwitchTab('cecho', this)">📡 C-ECHO</button>
             <button class="qb-tab" onclick="suporteSwitchTab('ia', this)">🤖 Diagnóstico IA</button>
             <button class="qb-tab" onclick="suporteSwitchTab('dicom', this)">🔬 DICOM Inspector</button>
+            <button class="qb-tab" onclick="suporteSwitchTab('dicomcriar', this)">🧪 Gerar DICOM</button>
         </div>
 
         <!-- ── SUB-ABA: COMANDOS ── -->
@@ -880,6 +881,130 @@
             </div>
         </div><!-- fim suporte-panel-dicom -->
 
+        <!-- ── SUB-ABA: GERAR DICOM (arquivo sintético de teste) ── -->
+        <div id="suporte-panel-dicomcriar" class="qb-panel">
+            <div class="dcm-wrap">
+                <div class="cecho-info-box">
+                    🧪 <strong>Gerador de DICOM de Teste</strong> — cria um arquivo <code>.dcm</code> sintético (imagem em branco/padrão + metadados fictícios) para testar envio ao PACS, sem usar dado real de paciente. SOP Class: Secondary Capture Image Storage.
+                </div>
+
+                <div class="qb-block">
+                    <div class="qb-block-label">DADOS DO PACIENTE</div>
+                    <div class="form-group">
+                        <label for="dcmCriarPatientName">Nome do Paciente</label>
+                        <input type="text" id="dcmCriarPatientName" placeholder="Ex: SILVA^JOAO">
+                    </div>
+                    <div class="form-group">
+                        <label for="dcmCriarPatientID">ID do Paciente</label>
+                        <input type="text" id="dcmCriarPatientID" placeholder="Gerado automaticamente se vazio">
+                    </div>
+                    <div class="form-group">
+                        <label for="dcmCriarBirthDate">Data de Nascimento (opcional)</label>
+                        <input type="date" id="dcmCriarBirthDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="dcmCriarSex">Sexo</label>
+                        <select id="dcmCriarSex">
+                            <option value="O">Outro / Não informado</option>
+                            <option value="M">Masculino</option>
+                            <option value="F">Feminino</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="qb-block">
+                    <div class="qb-block-label">DADOS DO ESTUDO</div>
+                    <div class="form-group">
+                        <label for="dcmCriarModality">Modalidade</label>
+                        <select id="dcmCriarModality">
+                            <option value="OT">OT — Outro</option>
+                            <option value="CR">CR — Radiografia Computadorizada</option>
+                            <option value="CT">CT — Tomografia</option>
+                            <option value="MR">MR — Ressonância</option>
+                            <option value="US">US — Ultrassom</option>
+                            <option value="DX">DX — Raio-X Digital</option>
+                            <option value="NM">NM — Medicina Nuclear</option>
+                            <option value="PT">PT — PET</option>
+                            <option value="SC">SC — Captura Secundária</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="dcmCriarAccession">Accession Number</label>
+                        <div class="pw-input-row">
+                            <input type="text" id="dcmCriarAccession" style="background:transparent;color:white;">
+                            <button onclick="dcmGerarAccession()" title="Gerar novo número">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="dcmCriarStudyDate">Data do Estudo</label>
+                        <input type="date" id="dcmCriarStudyDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="dcmCriarStudyTime">Hora do Estudo (opcional)</label>
+                        <input type="time" id="dcmCriarStudyTime">
+                    </div>
+                    <div class="form-group">
+                        <label for="dcmCriarStudyDesc">Descrição do Estudo</label>
+                        <input type="text" id="dcmCriarStudyDesc" placeholder="Ex: Estudo de teste — Mobilemed Tools">
+                    </div>
+                    <div class="form-group">
+                        <label for="dcmCriarReferringPhys">Médico Solicitante (opcional)</label>
+                        <input type="text" id="dcmCriarReferringPhys" placeholder="Ex: TESTE^MEDICO">
+                    </div>
+                </div>
+
+                <div class="qb-block">
+                    <div class="qb-block-label">EQUIPAMENTO / INSTITUIÇÃO</div>
+                    <div class="form-group">
+                        <label for="dcmCriarInstitution">Nome da Instituição</label>
+                        <input type="text" id="dcmCriarInstitution" placeholder="Ex: Mobilemed Tools">
+                    </div>
+                    <div class="form-group">
+                        <label for="dcmCriarStation">Station Name</label>
+                        <input type="text" id="dcmCriarStation" placeholder="Ex: MOBILEMEDTOOLS">
+                    </div>
+                    <div class="form-group">
+                        <label for="dcmCriarManufacturer">Fabricante</label>
+                        <input type="text" id="dcmCriarManufacturer" placeholder="Ex: Mobilemed Tools Test Generator">
+                    </div>
+                </div>
+
+                <div class="qb-block">
+                    <div class="qb-block-label">IMAGEM SINTÉTICA</div>
+                    <div class="form-group">
+                        <label for="dcmCriarPadrao">Padrão da Imagem</label>
+                        <select id="dcmCriarPadrao" onchange="dcmCriarDesenharPreview()">
+                            <option value="cinza">Cinza sólido</option>
+                            <option value="gradiente">Gradiente</option>
+                            <option value="xadrez">Xadrez</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="dcmCriarTamanho">Tamanho da Imagem</label>
+                        <select id="dcmCriarTamanho">
+                            <option value="256">256x256</option>
+                            <option value="512" selected>512x512</option>
+                            <option value="1024">1024x1024</option>
+                        </select>
+                    </div>
+                    <div style="text-align:center; margin:16px 0;">
+                        <canvas id="dcmCriarPreview" width="150" height="150"
+                            style="width:150px; height:150px; border-radius:8px; border:1px solid rgba(255,255,255,0.25);"></canvas>
+                    </div>
+                </div>
+
+                <div style="text-align:center; margin:20px 0;">
+                    <button class="btn btn-success" onclick="dcmCriarGerarArquivo()">🧪 Gerar Arquivo DICOM</button>
+                </div>
+
+                <div id="dcmCriarInfoGerado" style="display:none;"></div>
+            </div>
+        </div><!-- fim suporte-panel-dicomcriar -->
+
     </div>
 </div>
 
@@ -894,6 +1019,7 @@
             <button class="qb-tab active" onclick="implantacaoSwitchTab('querybuilder', this)">🗄️ Query Builder</button>
             <button class="qb-tab" onclick="implantacaoSwitchTab('geradorimp', this)">🔐 Gerador de Implantação</button>
             <button class="qb-tab" onclick="implantacaoSwitchTab('planilha', this)">📋 Planilha de Implantação</button>
+            <button class="qb-tab" onclick="implantacaoSwitchTab('xmlvalidador', this)">🧾 Validador de XML</button>
         </div>
 
         <!-- ── SUB-ABA: QUERY BUILDER ── -->
@@ -1261,6 +1387,40 @@
 
         </div><!-- fim implantacao-panel-planilha -->
 
+        <!-- ── SUB-ABA: VALIDADOR DE XML ── -->
+        <div id="implantacao-panel-xmlvalidador" class="qb-panel">
+            <div class="cecho-info-box">
+                🧾 <strong>Validador de XML</strong> — verifica se o XML está bem-formado e detecta problemas de encoding/acentuação (ex: <code>Ã£</code> no lugar de <code>ã</code>). Envie o arquivo <code>.xml</code> para a checagem completa de bytes, ou apenas cole o conteúdo.
+            </div>
+
+            <div class="upload-section" style="margin-top:16px;">
+                <div class="file-input-wrapper">
+                    <label for="xmlValidadorFile" class="file-input-label">📁 Selecionar arquivo .xml</label>
+                    <input type="file" id="xmlValidadorFile" accept=".xml" onchange="xmlValidadorFileChange(this)">
+                </div>
+                <div id="xmlValidadorFileName" style="text-align:center; margin-top:10px;"></div>
+            </div>
+
+            <div class="qb-block" style="margin-top:16px;">
+                <div class="qb-block-label">OU COLE O CONTEÚDO DO XML AQUI</div>
+                <textarea id="xmlValidadorTexto" class="qb-code qb-code-editable" spellcheck="false" rows="12"
+                    placeholder="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&#10;&lt;raiz&gt;...&lt;/raiz&gt;"></textarea>
+            </div>
+
+            <div class="qb-preview-actions" style="margin-top:12px;">
+                <button class="qb-action-btn qb-action-save" onclick="xmlValidadorValidar()">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    Validar XML
+                </button>
+                <button class="qb-action-btn qb-action-danger" onclick="xmlValidadorLimpar()">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+                    Limpar
+                </button>
+            </div>
+
+            <div id="xmlValidadorResultado" style="display:none; margin-top:20px;"></div>
+        </div><!-- fim implantacao-panel-xmlvalidador -->
+
     </div>
 </div>
 
@@ -1278,5 +1438,7 @@
 <script src="js/dicom.js"></script>
 <script src="js/implantacao.js"></script>
 <script src="js/logo.js"></script>
+<script src="js/dicomcriar.js"></script>
+<script src="js/xmlvalidador.js"></script>
 </body>
 </html>
