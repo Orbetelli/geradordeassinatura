@@ -246,6 +246,14 @@
                     </div>
                 </div>
 
+                <!-- Tamanho da segunda assinatura (independente da assinatura 1) -->
+                <div class="form-group">
+                    <label>📐 Tamanho da Imagem da Assinatura 2: <span class="threshold-value" id="sigSize2Val">100%</span></label>
+                    <input type="range" id="sigSize2" min="20" max="200" value="100" step="5"
+                        oninput="document.getElementById('sigSize2Val').textContent=this.value+'%'; sigRegenIfReady();">
+                    <div class="helper-text">💡 Ajusta só o tamanho da segunda assinatura, sem afetar a primeira (20% a 200%)</div>
+                </div>
+
                 <!-- Campos nome/CRM (ocultos no modo modelo pronto) -->
                 <div id="sig2CamposNormais">
                     <div class="form-group">

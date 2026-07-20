@@ -181,6 +181,13 @@ function setupEventListeners() {
             if (addRQE2cb) addRQE2cb.checked = false;
             var rqeGroup2 = document.getElementById('rqeGroup2');
             if (rqeGroup2) rqeGroup2.classList.add('hidden');
+            // Reseta o slider de tamanho da assinatura 2
+            var sigSize2El = document.getElementById('sigSize2');
+            if (sigSize2El) {
+                sigSize2El.value = 100;
+                var sigSize2ValEl = document.getElementById('sigSize2Value');
+                if (sigSize2ValEl) sigSize2ValEl.textContent = '100%';
+            }
             // Esconde undo/redo
             var undoWrap = document.getElementById('sig_undoredo_wrap');
             if (undoWrap) undoWrap.style.display = 'none';
@@ -776,10 +783,20 @@ function processDoubleImages(s1,s2,fc,ctx,n1,c1) {
         var tc=document.createElement('canvas'),tctx=tc.getContext('2d',{alpha:true,willReadFrequently:true});
         tc.width=img.width;tc.height=img.height;tctx.drawImage(img,0,0);return applyAllFilters(tc,tctx);
     };
-    var sigScale2 = (document.getElementById('sigSize') ? parseInt(document.getElementById('sigSize').value) : 100) / 100;
-    var pc1=mk(s1),pc2=mk(s2),W=fc.width,H=fc.height,mW=Math.floor(240*sigScale2),mH=Math.floor(50*sigScale2);
-    var r1=Math.min(mW/pc1.width,mH/pc1.height,1),nW1=Math.floor(pc1.width*r1),nH1=Math.floor(pc1.height*r1);
-    var r2=Math.min(mW/pc2.width,mH/pc2.height,1),nW2=Math.floor(pc2.width*r2),nH2=Math.floor(pc2.height*r2);
+
+    // ── Escala independente para cada assinatura ──
+    // Assinatura 1 usa o slider "sigSize", assinatura 2 usa o slider "sigSize2".
+    // Assim é possível aumentar/diminuir uma sem afetar a outra.
+    var sigScale1 = (document.getElementById('sigSize')  ? parseInt(document.getElementById('sigSize').value)  : 100) / 100;
+    var sigScale2 = (document.getElementById('sigSize2') ? parseInt(document.getElementById('sigSize2').value) : 100) / 100;
+
+    var pc1=mk(s1),pc2=mk(s2),W=fc.width,H=fc.height;
+
+    var mW1=Math.floor(240*sigScale1), mH1=Math.floor(50*sigScale1);
+    var mW2=Math.floor(240*sigScale2), mH2=Math.floor(50*sigScale2);
+
+    var r1=Math.min(mW1/pc1.width,mH1/pc1.height,1),nW1=Math.floor(pc1.width*r1),nH1=Math.floor(pc1.height*r1);
+    var r2=Math.min(mW2/pc2.width,mH2/pc2.height,1),nW2=Math.floor(pc2.width*r2),nH2=Math.floor(pc2.height*r2);
     var n2=document.getElementById('doctorName2').value.trim();
     var c2=document.getElementById('doctorCRM2').value.trim();
     var addX=document.getElementById('addExtraPhrase').checked;

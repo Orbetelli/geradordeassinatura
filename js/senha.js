@@ -4,6 +4,16 @@
 
 var pwSavedUsers = [];
 
+// Escape local (arquivo separado — não depende de escapeHtml existir em outro script)
+function pwEscapeHtml(str) {
+    return String(str == null ? '' : str)
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
 function toggleEmailManual(on) {
     document.getElementById('pwModoAuto').style.display   = on ? 'none'  : 'block';
     document.getElementById('pwModoManual').style.display = on ? 'block' : 'none';
@@ -72,9 +82,13 @@ function pwGerarSenhas() {
         var div   = document.createElement('div');
         div.className = 'pw-password-item';
         div.setAttribute('data-senha', senha);
+        div.setAttribute('data-prefix', prefix);
+        div.setAttribute('data-len', len);
+        div.setAttribute('data-special', useSpecial);
+        div.setAttribute('data-upper', upperOnly);
         div.innerHTML =
             '<span>' + senha + '</span>' +
-            '<button onclick="pwRegenOne(this,\'' + prefix + '\',' + len + ',' + useSpecial + ',' + upperOnly + ')" title="Regerar">' +
+            '<button onclick="pwRegenOne(this)" title="Regerar">' +
             '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
             '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button>' +
             '<button onclick="pwSalvarGeral(this)" title="Salvar">' +
@@ -137,8 +151,13 @@ function pwGeralFeedback(btn, icon) {
     setTimeout(function() { btn.innerHTML = orig; }, 1500);
 }
 
-function pwRegenOne(btn, prefix, len, useSpecial, upperOnly) {
+function pwRegenOne(btn) {
     var item = btn.closest('.pw-password-item');
+    if (!item) return;
+    var prefix     = item.getAttribute('data-prefix') || 'Mobile';
+    var len        = parseInt(item.getAttribute('data-len'), 10) || 6;
+    var useSpecial = item.getAttribute('data-special') === 'true';
+    var upperOnly  = item.getAttribute('data-upper') === 'true';
     var nova = prefix + '@' + pwGerarSenha(len, useSpecial, upperOnly);
     item.querySelector('span').textContent = nova;
     item.setAttribute('data-senha', nova);
@@ -187,11 +206,11 @@ function pwCriarItemImp(nome, email, senha) {
     div.className = 'pw-password-item pw-implantacao-item';
     div.innerHTML =
         '<div style="flex:1;min-width:0;">' +
-        '<div style="font-size:12px;opacity:0.7;margin-bottom:2px;">' + nome + '</div>' +
-        '<div style="font-size:13px;word-break:break-all;">' + email + '</div>' +
-        '<div style="font-family:Courier New,monospace;font-size:14px;margin-top:2px;">' + senha + '</div>' +
+        '<div style="font-size:12px;opacity:0.7;margin-bottom:2px;">' + pwEscapeHtml(nome) + '</div>' +
+        '<div style="font-size:13px;word-break:break-all;">' + pwEscapeHtml(email) + '</div>' +
+        '<div style="font-family:Courier New,monospace;font-size:14px;margin-top:2px;">' + pwEscapeHtml(senha) + '</div>' +
         '</div>' +
-        '<button onclick="pwCopiarItemCredencial(this)" data-email="' + email + '" data-senha="' + senha + '">' +
+        '<button onclick="pwCopiarItemCredencial(this)" data-email="' + pwEscapeHtml(email) + '" data-senha="' + pwEscapeHtml(senha) + '">' +
         '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
         '<rect x="9" y="9" width="13" height="13" rx="2"/>' +
         '<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>' +
@@ -236,17 +255,30 @@ function pwRenderUsers() {
     actions.style.display='flex';
     document.getElementById('pwMsgSection').style.display = 'block';
     list.innerHTML=pwSavedUsers.map(function(u,i){
-        return '<div class="pw-user-item">'+
+        return '<div class="pw-user-item" data-password="' + pwEscapeHtml(u.password) + '">'+
             '<div style="min-width:0;flex:1;">'+
-            '<div style="font-weight:600;">'+u.name+'</div>'+
-            '<div class="uemail">'+u.email+' · '+u.date+'</div>'+
-            '<div style="font-family:\'Courier New\',monospace;font-size:12px;margin-top:3px;opacity:0.85;letter-spacing:0.5px;">'+u.password+'</div>'+
+            '<div style="font-weight:600;">'+pwEscapeHtml(u.name)+'</div>'+
+            '<div class="uemail">'+pwEscapeHtml(u.email)+' · '+pwEscapeHtml(u.date)+'</div>'+
+            '<div style="font-family:\'Courier New\',monospace;font-size:12px;margin-top:3px;opacity:0.85;letter-spacing:0.5px;">'+pwEscapeHtml(u.password)+'</div>'+
             '</div>'+
             '<div class="uactions">'+
-            '<button onclick="navigator.clipboard.writeText(\''+u.password+'\')">Copiar senha</button>'+
+            '<button onclick="pwCopiarSenhaItem(this)">Copiar senha</button>'+
             '<button class="del-btn" onclick="pwRemoveUser('+i+')">Remover</button>'+
             '</div></div>';
     }).join('');
+}
+
+function pwCopiarSenhaItem(btn) {
+    var item = btn.closest('.pw-user-item');
+    var senha = item ? item.getAttribute('data-password') : '';
+    if (!senha) return;
+    var ta = document.createElement('textarea');
+    ta.innerHTML = senha;
+    navigator.clipboard.writeText(ta.value).then(function() {
+        var orig = btn.textContent;
+        btn.textContent = 'Copiado!';
+        setTimeout(function() { btn.textContent = orig; }, 1500);
+    });
 }
 
 function pwCopiarCredenciais() {
@@ -286,18 +318,6 @@ function pwGetMsgPadrao() {
         'Equipe MobileMed'
     ].join('\n');
 }
-
-var PW_MSG_PADRAO = [
-    'Seja bem-vindo(a) ao nosso sistema de Telerradiologia MobileMed!',
-    'Seguem abaixo as informacoes necessarias para o seu primeiro acesso:',
-    '',
-    'Portal: laudos.mobilemed.com.br/login',
-    'Login (e-mail): {email}',
-    'Senha Temporaria: {senha}',
-    '',
-    'Atenciosamente,',
-    'Equipe MobileMed'
-].join('\n');
 
 function pwCarregarMensagemPadrao() {
     var editor = document.getElementById('pwMsgEditor') || document.getElementById('pwMensagemCustom');
@@ -387,38 +407,34 @@ function pwExportarExcel() {
     pwFeedbackBtn('.pw-btn-exportxlsx','Baixando!');
 }
 
-function pwImportarArquivo(input) {
-    var file=input.files[0]; if (!file) return;
-    var info=document.getElementById('pwImportInfo');
-    var ext=file.name.split('.').pop().toLowerCase();
-    var reader=new FileReader();
-    reader.onload=function(e){
-        try {
-            var usuarios=[];
-            if (ext==='csv') {
-                usuarios=pwParsearCSV(e.target.result);
-            } else if (ext==='xlsx'||ext==='xls') {
-                if (typeof XLSX==='undefined') { alert('Biblioteca Excel ainda carregando.'); return; }
-                var wb=XLSX.read(e.target.result,{type:'binary'});
-                var ws=wb.Sheets[wb.SheetNames[0]];
-                var json=XLSX.utils.sheet_to_json(ws,{defval:''});
-                usuarios=pwNormalizarLinhas(json);
-            }
-            if (!usuarios.length) { info.textContent='Nenhum usuário encontrado no arquivo.'; return; }
-            var adicionados=0;
-            usuarios.forEach(function(u){
-                var existe=pwSavedUsers.some(function(s){return s.email===u.email;});
-                if (!existe) { pwSavedUsers.push(u); adicionados++; }
-            });
-            document.getElementById('savedCount').textContent=pwSavedUsers.length;
-            pwRenderUsers();
-            info.textContent=adicionados+' usuário(s) importado(s) com senha gerada!';
-            setTimeout(function(){info.textContent='';},4000);
-        } catch(err) { info.textContent='Erro ao ler o arquivo: '+err.message; }
-        input.value='';
-    };
-    if (ext==='csv') reader.readAsText(file,'UTF-8');
-    else reader.readAsBinaryString(file);
+// ── Normalização e detecção de colunas (importação) ──
+function pwNormalizeStr(s) {
+    return String(s || '')
+        .toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .trim();
+}
+
+var PW_NAME_KEYS  = ['nome completo', 'nome', 'name', 'colaborador', 'funcionario', 'usuario', 'user', 'medico', 'responsavel'];
+var PW_EMAIL_KEYS = ['e-mail', 'email', 'mail', 'correio', 'login'];
+
+function pwIsValidEmail(v) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v || '').trim());
+}
+
+function pwFindColumn(headers, keywords) {
+    var normalizedHeaders = headers.map(pwNormalizeStr);
+    for (var k = 0; k < keywords.length; k++) {
+        for (var i = 0; i < normalizedHeaders.length; i++) {
+            if (normalizedHeaders[i] === keywords[k]) return i; // match exato primeiro
+        }
+    }
+    for (var k2 = 0; k2 < keywords.length; k2++) {
+        for (var i2 = 0; i2 < normalizedHeaders.length; i2++) {
+            if (normalizedHeaders[i2].includes(keywords[k2])) return i2; // match parcial depois
+        }
+    }
+    return -1;
 }
 
 function pwGerarSenhaImport() {
@@ -431,20 +447,37 @@ function pwGerarSenhaImport() {
 
 function pwParsearCSV(texto) {
     texto = texto.replace(/^\uFEFF/, '');
-    var sep = texto.indexOf('\r\n') !== -1 ? '\r\n' : '\n';
-    var linhas = texto.split(sep).filter(function(l){ return l.trim(); });
+    var sepLinha = texto.indexOf('\r\n') !== -1 ? '\r\n' : '\n';
+    var linhas = texto.split(sepLinha).filter(function(l) { return l.trim(); });
     if (linhas.length < 2) return [];
-    var header = linhas[0].split(',').map(function(h){ return h.replace(/"/g,'').trim().toLowerCase(); });
-    var iNome  = header.findIndex(function(h){ return h.includes('nome'); });
-    var iEmail = header.findIndex(function(h){ return h.includes('email'); });
-    if (iEmail === -1) throw new Error('O arquivo precisa ter uma coluna Email.');
-    return linhas.slice(1).map(function(linha){
-        var cols = linha.match(/(".*?"|[^,]+)(?=,|$)/g) || linha.split(',');
-        function lim(v){ return (v||'').toString().replace(/^"|"$/g,'').trim(); }
+
+    // Detecta separador de coluna automaticamente (vírgula ou ponto-e-vírgula)
+    var amostra = linhas[0];
+    var sepCol = (amostra.split(';').length > amostra.split(',').length) ? ';' : ',';
+    var regexCols = sepCol === ';' ? /(".*?"|[^;]+)(?=;|$)/g : /(".*?"|[^,]+)(?=,|$)/g;
+
+    var headerRaw = (linhas[0].match(regexCols) || linhas[0].split(sepCol))
+        .map(function(h) { return h.replace(/^"|"$/g, '').trim(); });
+
+    var iNome  = pwFindColumn(headerRaw, PW_NAME_KEYS);
+    var iEmail = pwFindColumn(headerRaw, PW_EMAIL_KEYS);
+
+    if (iEmail === -1) {
+        throw new Error('Não encontrei uma coluna de E-mail no arquivo. Colunas aceitas: Nome, Email, E-mail, Login, Usuário.');
+    }
+
+    function lim(v) { return (v || '').toString().replace(/^"|"$/g, '').trim(); }
+
+    var vistos = {};
+    return linhas.slice(1).map(function(linha) {
+        var cols = linha.match(regexCols) || linha.split(sepCol);
         var email = lim(cols[iEmail]);
-        if (!email) return null;
+        if (!email || !pwIsValidEmail(email)) return null;
+        var chave = email.toLowerCase();
+        if (vistos[chave]) return null; // evita duplicado dentro do próprio arquivo
+        vistos[chave] = true;
         return {
-            name:     iNome >= 0 ? lim(cols[iNome]) || 'Importado' : 'Importado',
+            name:     iNome >= 0 ? (lim(cols[iNome]) || 'Importado') : 'Importado',
             email:    email,
             password: pwGerarSenhaImport(),
             date:     new Date().toLocaleDateString('pt-BR')
@@ -453,22 +486,79 @@ function pwParsearCSV(texto) {
 }
 
 function pwNormalizarLinhas(json) {
-    return json.map(function(row){
-        function norm(){
-            var keys = Array.prototype.slice.call(arguments);
-            for (var i=0; i<keys.length; i++){
-                var f = Object.keys(row).find(function(r){ return r.toLowerCase().includes(keys[i]); });
-                if (f && row[f]) return String(row[f]).trim();
-            }
-            return '';
-        }
-        var email = norm('email');
-        if (!email) return null;
+    if (!json.length) return [];
+    var headers = Object.keys(json[0]);
+    var iNomeKey  = null, iEmailKey = null;
+    var idxNome  = pwFindColumn(headers, PW_NAME_KEYS);
+    var idxEmail = pwFindColumn(headers, PW_EMAIL_KEYS);
+    if (idxNome  !== -1) iNomeKey  = headers[idxNome];
+    if (idxEmail !== -1) iEmailKey = headers[idxEmail];
+
+    if (!iEmailKey) {
+        throw new Error('Não encontrei uma coluna de E-mail na planilha. Colunas aceitas: Nome, Email, E-mail, Login, Usuário.');
+    }
+
+    var vistos = {};
+    return json.map(function(row) {
+        var email = String(row[iEmailKey] || '').trim();
+        if (!email || !pwIsValidEmail(email)) return null;
+        var chave = email.toLowerCase();
+        if (vistos[chave]) return null; // evita duplicado dentro do próprio arquivo
+        vistos[chave] = true;
+        var nome = iNomeKey ? String(row[iNomeKey] || '').trim() : '';
         return {
-            name:     norm('nome') || 'Importado',
+            name:     nome || 'Importado',
             email:    email,
             password: pwGerarSenhaImport(),
             date:     new Date().toLocaleDateString('pt-BR')
         };
     }).filter(Boolean);
+}
+
+function pwImportarArquivo(input) {
+    var file=input.files[0]; if (!file) return;
+    var info=document.getElementById('pwImportInfo');
+    var ext=file.name.split('.').pop().toLowerCase();
+    info.textContent = 'Lendo arquivo...';
+    var reader=new FileReader();
+    reader.onload=function(e){
+        try {
+            var usuarios=[];
+            if (ext==='csv') {
+                usuarios=pwParsearCSV(e.target.result);
+            } else if (ext==='xlsx'||ext==='xls') {
+                if (typeof XLSX==='undefined') { info.textContent='Biblioteca Excel ainda carregando. Tente novamente em instantes.'; return; }
+                var wb=XLSX.read(e.target.result,{type:'binary'});
+                var ws=wb.Sheets[wb.SheetNames[0]];
+                var json=XLSX.utils.sheet_to_json(ws,{defval:''});
+                usuarios=pwNormalizarLinhas(json);
+            } else {
+                info.textContent='Formato não suportado. Use .csv, .xlsx ou .xls.';
+                return;
+            }
+            if (!usuarios.length) {
+                info.textContent='Nenhum e-mail válido encontrado no arquivo.';
+                return;
+            }
+            var adicionados=0, duplicados=0;
+            usuarios.forEach(function(u){
+                var existe=pwSavedUsers.some(function(s){ return s.email.toLowerCase()===u.email.toLowerCase(); });
+                if (!existe) { pwSavedUsers.push(u); adicionados++; }
+                else { duplicados++; }
+            });
+            document.getElementById('savedCount').textContent=pwSavedUsers.length;
+            var savedCountGeral = document.getElementById('savedCountGeral');
+            if (savedCountGeral) savedCountGeral.textContent = pwSavedUsers.length;
+            pwRenderUsers();
+            info.textContent = adicionados + ' usuário(s) importado(s) com senha gerada!' +
+                (duplicados > 0 ? ' (' + duplicados + ' já existiam e foram ignorados)' : '');
+            setTimeout(function(){info.textContent='';},5000);
+        } catch(err) {
+            info.textContent = err.message || 'Erro ao ler o arquivo.';
+        }
+        input.value='';
+    };
+    reader.onerror = function() { info.textContent = 'Não foi possível ler o arquivo.'; };
+    if (ext==='csv') reader.readAsText(file,'UTF-8');
+    else reader.readAsBinaryString(file);
 }
