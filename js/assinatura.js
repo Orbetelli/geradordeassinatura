@@ -185,7 +185,7 @@ function setupEventListeners() {
             var sigSize2El = document.getElementById('sigSize2');
             if (sigSize2El) {
                 sigSize2El.value = 100;
-                var sigSize2ValEl = document.getElementById('sigSize2Value');
+                var sigSize2ValEl = document.getElementById('sigSize2Val');
                 if (sigSize2ValEl) sigSize2ValEl.textContent = '100%';
             }
             // Esconde undo/redo
